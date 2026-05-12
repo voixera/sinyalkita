@@ -1,6 +1,6 @@
 import type { Billing, MeResponse, Package, Payment, Role } from "@/lib/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 export class ApiError extends Error {
   status: number;

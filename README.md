@@ -30,42 +30,38 @@ server/
 
 ```bash
 npm install --prefix client
-npm install --prefix server
 ```
 
 2. Siapkan environment:
 
 ```bash
-cp server/.env.example server/.env
 cp client/.env.local.example client/.env.local
 ```
 
-3. Buat project Supabase, lalu isi `DATABASE_URL` dan `DIRECT_URL` di `server/.env`.
+3. Buat project Supabase, lalu isi `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, dan `CLIENT_URL` di `client/.env.local`.
 
 4. Generate Prisma, migrasi, dan seed:
 
 ```bash
-npm --prefix server run prisma:generate
-npm --prefix server run prisma:deploy
-npm --prefix server run prisma:seed
+npm --prefix client run prisma:generate
+npm --prefix client run prisma:deploy
+npm --prefix client run prisma:seed
 ```
 
-5. Jalankan backend dan frontend di terminal terpisah:
+5. Jalankan aplikasi:
 
 ```bash
-npm run dev:server
 npm run dev:client
 ```
 
 Frontend: http://localhost:3000  
-Backend: http://localhost:4000
+API lokal Next/Vercel: http://localhost:3000/api/health
 
 ## Environment: GitHub vs Vercel
 
 File yang aman diupload ke GitHub hanya file contoh:
 
 ```txt
-server/.env.example
 client/.env.local.example
 ```
 
@@ -73,27 +69,42 @@ File berisi key asli jangan diupload:
 
 ```txt
 .env
-server/.env
 client/.env.local
+```
+
+Karena frontend dan backend sekarang sama-sama berjalan di Vercel melalui Next.js API routes, `NEXT_PUBLIC_API_URL` tidak wajib diisi. Frontend otomatis memakai `/api`.
+
+Di Vercel, set **Root Directory** ke:
+
+```txt
+client
+```
+
+Build command cukup default dari package `client`:
+
+```txt
+npm run build
 ```
 
 Variabel untuk deploy Vercel disimpan di dashboard Vercel, bukan di repo GitHub:
 
 ```txt
-NEXT_PUBLIC_API_URL=https://domain-backend-kamu.com/api
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+DIRECT_URL=postgresql://postgres:PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres
+JWT_SECRET=isi-dengan-random-secret-panjang
+CLIENT_URL=https://sinyalkita.vercel.app
 ```
 
-Variabel backend disimpan di server/hosting backend kamu:
+Untuk local development di `client/.env.local`:
 
 ```txt
 DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
 DIRECT_URL=postgresql://postgres:PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres
 JWT_SECRET=isi-dengan-random-secret-panjang
-CLIENT_URL=https://domain-vercel-kamu.vercel.app
-PORT=4000
+CLIENT_URL=http://localhost:3000
 ```
 
-`NEXT_PUBLIC_API_URL` boleh terlihat di browser karena memang public client config. `DATABASE_URL`, `DIRECT_URL`, dan `JWT_SECRET` wajib rahasia.
+`DATABASE_URL`, `DIRECT_URL`, dan `JWT_SECRET` wajib rahasia. Jangan masukkan ke GitHub.
 
 ## Alur Admin
 
@@ -120,4 +131,4 @@ ID login: faisalriza00123
 Password: pelanggan123
 ```
 
-Data akun di atas dibuat oleh `npm --prefix server run prisma:seed` untuk local development. Aplikasi tidak memiliki mode demo di frontend; semua data pelanggan harus datang dari backend dan Supabase Postgres.
+Data akun di atas dibuat oleh `npm --prefix client run prisma:seed` untuk local development. Aplikasi tidak memiliki mode demo di frontend; semua data pelanggan harus datang dari API Vercel dan Supabase Postgres.

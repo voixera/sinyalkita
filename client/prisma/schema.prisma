@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum ServiceStatus {
+  ACTIVE
+  MAINTENANCE
+  SUSPENDED
+}
+
+enum BillingStatus {
+  UNPAID
+  PAID
+  OVERDUE
+}
+
+enum PaymentStatus {
+  SUCCESS
+  PENDING
+  FAILED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  customerId   String         @unique
+  loginId      String         @unique
+  name         String
+  email        String?        @unique
+  passwordHash String
+  phone        String
+  address      String
+  role         Role           @default(CUSTOMER)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  subscription Subscription?
+  billings     Billing[]
+  payments     Payment[]
+}
+
+model Package {
+  id           String         @id @default(cuid())
+  name         String
+  speedMbps    Int
+  monthlyPrice Int
+  description  String
+  createdAt    DateTime       @default(now())
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id         String        @id @default(cuid())
+  userId     String        @unique
+  packageId  String
+  status     ServiceStatus @default(ACTIVE)
+  startedAt  DateTime
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package    Package       @relation(fields: [packageId], references: [id])
+}
+
+model Billing {
+  id        String        @id @default(cuid())
+  userId    String
+  invoiceNo String        @unique
+  period    DateTime
+  amount    Int
+  dueDate   DateTime
+  status    BillingStatus @default(UNPAID)
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments  Payment[]
+
+  @@index([userId, period])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  userId    String
+  billingId String
+  method    String
+  amount    Int
+  status    PaymentStatus @default(SUCCESS)
+  reference String        @unique
+  paidAt    DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billing   Billing       @relation(fields: [billingId], references: [id], onDelete: Cascade)
+
+  @@index([userId, paidAt])
+}

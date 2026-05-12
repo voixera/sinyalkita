@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev:client": "npm --prefix client run dev",
-    "dev:server": "npm --prefix server run dev",
     "build:client": "npm --prefix client run build",
-    "start:server": "npm --prefix server run start"
+    "prisma:deploy": "npm --prefix client run prisma:deploy",
+    "prisma:seed": "npm --prefix client run prisma:seed"
   }
 }
