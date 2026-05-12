@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import type { Role } from "@/lib/types";
 
-type SessionUser = { name: string; role: Role };
+type SessionUser = { name: string; loginId: string; role: Role };
 type AuthContextValue = {
   user: SessionUser | null;
   token: string | null;

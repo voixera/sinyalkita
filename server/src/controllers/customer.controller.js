@@ -7,6 +7,7 @@ export async function me(req, res, next) {
       select: {
         id: true,
         customerId: true,
+        loginId: true,
         name: true,
         email: true,
         phone: true,
@@ -35,6 +36,7 @@ export async function me(req, res, next) {
       user: {
         id: user.id,
         customerId: user.customerId,
+        loginId: user.loginId,
         name: user.name,
         email: user.email,
         phone: user.phone,

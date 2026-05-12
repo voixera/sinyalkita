@@ -6,7 +6,7 @@ Portal resmi pelanggan SinyalKita untuk login, cek tagihan WiFi, pembayaran, riw
 
 - Frontend: Next.js, React, TailwindCSS, Framer Motion
 - Backend: Node.js, Express, Prisma ORM
-- Database: PostgreSQL
+- Database: Supabase Postgres
 - Auth: JWT + role-based access
 
 ## Struktur
@@ -40,13 +40,13 @@ cp server/.env.example server/.env
 cp client/.env.local.example client/.env.local
 ```
 
-3. Jalankan PostgreSQL dan pastikan `DATABASE_URL` di `server/.env` sesuai.
+3. Buat project Supabase, lalu isi `DATABASE_URL` dan `DIRECT_URL` di `server/.env`.
 
 4. Generate Prisma, migrasi, dan seed:
 
 ```bash
 npm --prefix server run prisma:generate
-npm --prefix server run prisma:migrate
+npm --prefix server run prisma:deploy
 npm --prefix server run prisma:seed
 ```
 
@@ -86,28 +86,38 @@ NEXT_PUBLIC_API_URL=https://domain-backend-kamu.com/api
 Variabel backend disimpan di server/hosting backend kamu:
 
 ```txt
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@...pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+DIRECT_URL=postgresql://postgres:PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres
 JWT_SECRET=isi-dengan-random-secret-panjang
 CLIENT_URL=https://domain-vercel-kamu.vercel.app
 PORT=4000
 ```
 
-`NEXT_PUBLIC_API_URL` boleh terlihat di browser karena memang public client config. `DATABASE_URL` dan `JWT_SECRET` wajib rahasia.
+`NEXT_PUBLIC_API_URL` boleh terlihat di browser karena memang public client config. `DATABASE_URL`, `DIRECT_URL`, dan `JWT_SECRET` wajib rahasia.
+
+## Alur Admin
+
+Admin login memakai akun seed atau akun admin yang dibuat langsung di database. Dari halaman `/admin`, admin dapat membuat akun pelanggan baru:
+
+1. Isi nama pelanggan, nomor WhatsApp, alamat, paket, dan kata sandi awal.
+2. Sistem membuat `ID login` otomatis dari nama pelanggan + nomor unik, misalnya `faisalriza00123`.
+3. Admin menyalin credential dan membagikannya ke pelanggan satu per satu.
+4. Pelanggan login memakai `ID login` dan kata sandi tersebut.
 
 ## Akun Seed Lokal
 
-Pelanggan:
+Admin seed lokal:
 
 ```txt
-Email: faisal@sinyalkita.test
-Password: pelanggan123
-```
-
-Admin:
-
-```txt
-Email: admin@sinyalkita.test
+ID login: admin-sinyalkita
 Password: admin123
 ```
 
-Data akun di atas dibuat oleh `npm --prefix server run prisma:seed` untuk local development. Aplikasi tidak memiliki mode demo di frontend; semua data pelanggan harus datang dari backend dan PostgreSQL.
+Pelanggan seed lokal:
+
+```txt
+ID login: faisalriza00123
+Password: pelanggan123
+```
+
+Data akun di atas dibuat oleh `npm --prefix server run prisma:seed` untuk local development. Aplikasi tidak memiliki mode demo di frontend; semua data pelanggan harus datang dari backend dan Supabase Postgres.

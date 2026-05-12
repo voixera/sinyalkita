@@ -1,4 +1,4 @@
-import type { Billing, MeResponse, Payment, Role } from "@/lib/types";
+import type { Billing, MeResponse, Package, Payment, Role } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
@@ -30,10 +30,10 @@ async function request<T>(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
-  login: (email: string, password: string) =>
-    request<{ token: string; user: { name: string; role: Role } }>("/auth/login", {
+  login: (loginId: string, password: string) =>
+    request<{ token: string; user: { name: string; loginId: string; role: Role } }>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ loginId, password })
     }),
   me: () => request<MeResponse>("/customers/me"),
   billings: () => request<{ billings: Billing[] }>("/billings"),
@@ -47,11 +47,37 @@ export const api = {
     request<{
       customers: Array<{
         customerId: string;
+        loginId: string;
         name: string;
         packageName: string;
         serviceStatus: string;
         billingStatus: string;
         amount: number;
       }>;
-    }>("/admin/overview")
+    }>("/admin/overview"),
+  adminPackages: () => request<{ packages: Array<Package & { id: string; description: string }> }>("/admin/packages"),
+  createCustomer: (payload: {
+    name: string;
+    password: string;
+    phone: string;
+    address: string;
+    packageId: string;
+    email?: string;
+    monthlyAmount?: number;
+  }) =>
+    request<{
+      customer: {
+        customerId: string;
+        loginId: string;
+        name: string;
+        packageName: string;
+        serviceStatus: string;
+        billingStatus: string;
+        amount: number;
+      };
+      credentials: { loginId: string; password: string };
+    }>("/admin/customers", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    })
 };

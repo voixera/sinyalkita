@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
           <section className="grid gap-5 lg:grid-cols-3">
             <MiniCard title="Alamat layanan" value={data.user.address} />
-            <MiniCard title="Kontak terdaftar" value={`${data.user.phone} - ${data.user.email}`} />
+            <MiniCard title="Kontak terdaftar" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
             <MiniCard title="Catatan" value="Layanan ini hanya untuk pelanggan aktif. Pendaftaran publik tidak tersedia." />
           </section>
         </motion.div>

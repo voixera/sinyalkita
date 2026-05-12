@@ -5,8 +5,9 @@ export type BillingStatus = "UNPAID" | "PAID" | "OVERDUE";
 export type User = {
   id: string;
   customerId: string;
+  loginId: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string;
   address: string;
   role: Role;

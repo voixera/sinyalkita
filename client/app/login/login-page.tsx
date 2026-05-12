@@ -11,8 +11,8 @@ import { useToast } from "@/components/toast";
 export default function LoginPage() {
   const { login } = useAuth();
   const { showToast } = useToast();
-  const [email, setEmail] = useState("faisal@sinyalkita.test");
-  const [password, setPassword] = useState("pelanggan123");
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,10 +21,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(loginId, password);
       showToast({ title: "Berhasil masuk ke portal.", tone: "success" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Email atau kata sandi belum sesuai.");
+      setError(err instanceof Error ? err.message : "ID login atau kata sandi belum sesuai.");
     } finally {
       setLoading(false);
     }
@@ -56,16 +56,17 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <label className="block text-sm font-bold text-ink" htmlFor="email">
-            Email
+          <label className="block text-sm font-bold text-ink" htmlFor="loginId">
+            ID login
           </label>
           <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            id="loginId"
+            type="text"
+            value={loginId}
+            onChange={(event) => setLoginId(event.target.value)}
             className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-            placeholder="nama@email.com"
+            placeholder="contoh: faisalriza00123"
+            autoComplete="username"
             required
           />
 
@@ -79,6 +80,7 @@ export default function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
             placeholder="Masukkan kata sandi"
+            autoComplete="current-password"
             required
           />
 
@@ -92,11 +94,9 @@ export default function LoginPage() {
             {loading ? "Memeriksa akses..." : "Masuk ke Portal"}
           </Button>
 
-          <div className="mt-5 rounded-xl border border-line/80 bg-mist/70 p-4 text-xs leading-5 text-ink-soft">
-            Demo pelanggan: <span className="mono font-bold">faisal@sinyalkita.test / pelanggan123</span>
-            <br />
-            Demo admin: <span className="mono font-bold">admin@sinyalkita.test / admin123</span>
-          </div>
+          <p className="mt-5 rounded-xl border border-line/80 bg-mist/70 p-4 text-xs font-semibold leading-5 text-ink-soft">
+            Gunakan ID login dan kata sandi yang diberikan oleh admin SinyalKita.
+          </p>
         </form>
       </motion.div>
     </main>

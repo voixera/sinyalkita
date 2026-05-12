@@ -36,6 +36,7 @@ async function main() {
     update: {},
     create: {
       customerId: "SKT-2024-00123",
+      loginId: "faisalriza00123",
       name: "Faisal Riza",
       email: "faisal@sinyalkita.test",
       passwordHash: passwordCustomer,
@@ -57,6 +58,7 @@ async function main() {
     update: {},
     create: {
       customerId: "SKT-ADMIN-00001",
+      loginId: "admin-sinyalkita",
       name: "Admin SinyalKita",
       email: "admin@sinyalkita.test",
       passwordHash: passwordAdmin,
@@ -71,6 +73,7 @@ async function main() {
     update: {},
     create: {
       customerId: "SKT-2021-00884",
+      loginId: "nadiaprameswari00884",
       name: "Nadia Prameswari",
       email: "nadia@sinyalkita.test",
       passwordHash: passwordCustomer,
