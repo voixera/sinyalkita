@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg-noise: radial-gradient(circle at 20% 10%, rgba(47, 154, 109, 0.08), transparent 24rem),
+    radial-gradient(circle at 90% 0%, rgba(15, 58, 99, 0.08), transparent 22rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #0b1628;
+  background: var(--bg-noise), #f4f7fa;
+  font-family: var(--font-body), system-ui, sans-serif;
+  text-rendering: geometricPrecision;
+}
+
+::selection {
+  color: #ffffff;
+  background: #0f3a63;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    letter-spacing: 0.005em;
+  }
+
+  button,
+  a,
+  input {
+    transition: color 240ms ease, background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease,
+      transform 240ms ease, opacity 240ms ease;
+  }
+
+  input:focus,
+  select:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(15, 58, 99, 0.12);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    border: 1px solid rgba(216, 224, 232, 0.86);
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 20px 70px rgba(11, 22, 40, 0.09);
+    backdrop-filter: blur(18px);
+  }
+
+  .mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #e9eef4;
+  }
+
+  .skeleton::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.68), transparent);
+    animation: shimmer 1.35s infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
