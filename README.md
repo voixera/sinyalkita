@@ -5,7 +5,7 @@ Portal resmi pelanggan SinyalKita untuk login, cek tagihan WiFi, pembayaran, riw
 ## Stack
 
 - Frontend: Next.js, React, TailwindCSS, Framer Motion
-- Backend: Node.js, Express, Prisma ORM
+- Backend: Next.js API Routes di Vercel, Prisma ORM
 - Database: Supabase Postgres
 - Auth: JWT + role-based access
 
@@ -13,15 +13,11 @@ Portal resmi pelanggan SinyalKita untuk login, cek tagihan WiFi, pembayaran, riw
 
 ```txt
 client/
-  app/                 Next.js App Router pages
+  app/                 Next.js App Router pages dan API routes
   components/          UI shell, toast, auth provider
-  lib/                 API client, formatter, shared types
+  lib/                 API client, formatter, shared types, server helpers
+  prisma/              Schema, migration, dan seed data
   public/images/       Asset visual landing
-server/
-  prisma/              Schema dan seed data
-  src/controllers/     REST controller
-  src/middleware/      JWT auth dan role guard
-  src/routes/          Route modular
 ```
 
 ## Menjalankan
