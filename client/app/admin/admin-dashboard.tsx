@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertTriangle, CheckCircle2, ImageIcon, XCircle, UsersRound, WalletCards } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, ExternalLink, ImageIcon, X, XCircle, UsersRound, WalletCards } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -58,6 +58,7 @@ export default function AdminPage() {
   });
   const [error, setError] = useState("");
   const [verifyingId, setVerifyingId] = useState("");
+  const [proofPreview, setProofPreview] = useState<PendingPayment | null>(null);
   const { ready, user } = useAuth();
   const { showToast } = useToast();
 
@@ -156,17 +157,7 @@ export default function AdminPage() {
                         {payment.method} - {formatDate(payment.paidAt)}
                       </p>
                       <p className="mono mt-1 text-xs font-bold text-ink-soft">{payment.reference}</p>
-                      {payment.proofImage ? (
-                        <a
-                          href={payment.proofImage}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-ink-soft hover:border-ocean/30 hover:text-ocean"
-                        >
-                          <ImageIcon className="h-4 w-4" />
-                          Lihat bukti transfer
-                        </a>
-                      ) : null}
+                      <ProofButton payment={payment} onOpen={() => setProofPreview(payment)} />
                     </div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                       <Button
@@ -259,7 +250,83 @@ export default function AdminPage() {
           </section>
         </div>
       )}
+      {proofPreview ? <ProofPreviewModal payment={proofPreview} onClose={() => setProofPreview(null)} /> : null}
     </AppShell>
+  );
+}
+
+function ProofButton({ payment, onOpen }: { payment: PendingPayment; onOpen: () => void }) {
+  if (!payment.proofImage) {
+    return (
+      <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-warning/20 bg-warning-soft px-3 py-2 text-xs font-bold text-warning">
+        <ImageIcon className="h-4 w-4" />
+        Bukti belum tersedia
+      </p>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mt-3 flex w-full max-w-xs items-center gap-3 rounded-xl border border-line bg-white p-2 text-left shadow-soft hover:border-ocean/30 hover:bg-mist sm:w-fit"
+    >
+      <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-mist">
+        <img src={payment.proofImage} alt={`Bukti transfer ${payment.user.name}`} className="h-full w-full object-cover" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-ink">Lihat bukti transfer</span>
+        <span className="block truncate text-xs font-semibold text-ink-soft">{payment.proofName || payment.reference}</span>
+      </span>
+    </button>
+  );
+}
+
+function ProofPreviewModal({ payment, onClose }: { payment: PendingPayment; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/70 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true">
+      <div className="mx-auto flex h-full max-w-4xl flex-col rounded-xl bg-white shadow-lift">
+        <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-5">
+          <div>
+            <p className="font-heading text-lg font-bold text-ink">Bukti transfer</p>
+            <p className="mt-1 text-xs font-semibold text-ink-soft">
+              {payment.user.name} - {formatCurrency(payment.amount)} - {payment.method}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft hover:bg-mist hover:text-ink"
+            aria-label="Tutup bukti transfer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto bg-mist p-3 sm:p-5">
+          <div className="grid min-h-full place-items-center">
+            <img
+              src={payment.proofImage || ""}
+              alt={`Bukti transfer ${payment.user.name}`}
+              className="max-h-[72vh] w-auto max-w-full rounded-xl border border-line bg-white object-contain shadow-soft"
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="mono truncate text-xs font-bold text-ink-soft">{payment.reference}</p>
+          {payment.proofImage ? (
+            <a
+              href={payment.proofImage}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-bold text-white hover:bg-ocean"
+            >
+              Buka gambar penuh
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
