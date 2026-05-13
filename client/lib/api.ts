@@ -58,8 +58,18 @@ export const api = {
         totalCustomers: number;
         activeCustomers: number;
         unpaidBillings: number;
+        pendingPayments: number;
       };
     }>("/admin/overview"),
+  adminPendingPayments: () =>
+    request<{
+      payments: Array<Payment & { user: { customerId: string; name: string; loginId: string } }>;
+    }>("/admin/payments"),
+  verifyPayment: (paymentId: string, action: "approve" | "reject") =>
+    request<{ payment: Payment }>(`/admin/payments/${paymentId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ action })
+    }),
   adminPackages: () => request<{ packages: Array<Package & { id: string; description: string }> }>("/admin/packages"),
   createCustomer: (payload: {
     name: string;

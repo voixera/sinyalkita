@@ -53,13 +53,16 @@ export function StatusBadge({ status }: { status: string }) {
     SUSPENDED: "Ditahan",
     PAID: "Lunas",
     UNPAID: "Menunggu",
-    OVERDUE: "Lewat tempo"
+    OVERDUE: "Lewat tempo",
+    SUCCESS: "Disetujui",
+    PENDING: "Perlu dicek",
+    FAILED: "Ditolak"
   };
 
   const tone =
-    status === "ACTIVE" || status === "PAID"
+    status === "ACTIVE" || status === "PAID" || status === "SUCCESS"
       ? "bg-success-soft text-success border-success/15"
-      : status === "MAINTENANCE" || status === "UNPAID"
+      : status === "MAINTENANCE" || status === "UNPAID" || status === "PENDING"
         ? "bg-warning-soft text-warning border-warning/15"
         : "bg-danger-soft text-danger border-danger/15";
 

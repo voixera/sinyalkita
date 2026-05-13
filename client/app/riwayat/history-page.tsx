@@ -3,7 +3,7 @@
 import { FileCheck2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { ErrorState, SkeletonBlock } from "@/components/ui";
+import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate, shortMonth } from "@/lib/format";
 import type { Payment } from "@/lib/types";
@@ -47,7 +47,10 @@ export default function HistoryPage() {
                     <p className="mono mt-1 text-xs font-bold text-ink-soft">{payment.reference}</p>
                   </div>
                 </div>
-                <p className="mono text-lg font-bold text-ink">{formatCurrency(payment.amount)}</p>
+                <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+                  <StatusBadge status={payment.status} />
+                  <p className="mono text-lg font-bold text-ink">{formatCurrency(payment.amount)}</p>
+                </div>
               </div>
             ))}
           </div>

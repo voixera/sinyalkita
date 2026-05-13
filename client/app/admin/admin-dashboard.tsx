@@ -1,12 +1,13 @@
 "use client";
 
-import { Activity, Copy, KeyRound, Plus, RefreshCw, UsersRound } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { Activity, CheckCircle2, XCircle, UsersRound, WalletCards } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { useToast } from "@/components/toast";
 import { api } from "@/lib/api";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
+import type { Payment } from "@/lib/types";
 
 type Row = {
   customerId: string;
@@ -18,92 +19,69 @@ type Row = {
   amount: number;
 };
 
-type PackageOption = {
-  id: string;
-  name: string;
-  speedMbps: number;
-  monthlyPrice: number;
-  description: string;
-};
-
-type GeneratedCredentials = {
-  loginId: string;
-  password: string;
-};
-
 type Summary = {
   totalCustomers: number;
   activeCustomers: number;
   unpaidBillings: number;
+  pendingPayments: number;
+};
+
+type PendingPayment = Payment & {
+  user: {
+    customerId: string;
+    name: string;
+    loginId: string;
+  };
 };
 
 export default function AdminPage() {
   const [customers, setCustomers] = useState<Row[] | null>(null);
-  const [packages, setPackages] = useState<PackageOption[]>([]);
-  const [summary, setSummary] = useState<Summary>({ totalCustomers: 0, activeCustomers: 0, unpaidBillings: 0 });
+  const [pendingPayments, setPendingPayments] = useState<PendingPayment[] | null>(null);
+  const [summary, setSummary] = useState<Summary>({
+    totalCustomers: 0,
+    activeCustomers: 0,
+    unpaidBillings: 0,
+    pendingPayments: 0
+  });
   const [error, setError] = useState("");
-  const [generated, setGenerated] = useState<GeneratedCredentials | null>(null);
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [verifyingId, setVerifyingId] = useState("");
   const { showToast } = useToast();
 
   useEffect(() => {
-    api
-      .adminOverview()
-      .then((data) => {
-        setCustomers(data.customers);
-        setSummary(data.summary);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat."));
-    api.adminPackages().then((data) => setPackages(data.packages)).catch(() => setPackages([]));
+    loadOperationalData();
   }, []);
 
-  async function createCustomer(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
-    setGenerated(null);
-
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") || ""),
-      password: String(form.get("password") || ""),
-      phone: String(form.get("phone") || ""),
-      address: String(form.get("address") || ""),
-      packageId: String(form.get("packageId") || ""),
-      email: String(form.get("email") || ""),
-      monthlyAmount: Number(form.get("monthlyAmount") || 0) || undefined
-    };
-
+  async function loadOperationalData() {
     try {
-      const result = await api.createCustomer(payload);
-      setCustomers((current) => [result.customer, ...(current || [])]);
-      setSummary((current) => ({
-        totalCustomers: current.totalCustomers + 1,
-        activeCustomers: current.activeCustomers + 1,
-        unpaidBillings: current.unpaidBillings + (result.customer.billingStatus === "UNPAID" ? 1 : 0)
-      }));
-      setGenerated(result.credentials);
-      event.currentTarget.reset();
-      setPassword("");
-      showToast({ title: "Akun pelanggan berhasil dibuat.", tone: "success" });
+      const [overview, payments] = await Promise.all([api.adminOverview(), api.adminPendingPayments()]);
+      setCustomers(overview.customers);
+      setSummary(overview.summary);
+      setPendingPayments(payments.payments);
+      setError("");
     } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Akun pelanggan belum dapat dibuat.", tone: "info" });
-    } finally {
-      setSubmitting(false);
+      setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat.");
     }
   }
 
-  function generatePassword() {
-    const nextPassword = createReadablePassword();
-    setPassword(nextPassword);
-    showToast({ title: "Kata sandi awal dibuat otomatis.", tone: "success" });
-  }
-
-  async function copyCredentials() {
-    if (!generated) return;
-    const text = `ID login: ${generated.loginId}\nKata sandi: ${generated.password}`;
-    await navigator.clipboard.writeText(text);
-    showToast({ title: "Credential pelanggan disalin.", tone: "success" });
+  async function verifyPayment(paymentId: string, action: "approve" | "reject") {
+    setVerifyingId(paymentId);
+    try {
+      await api.verifyPayment(paymentId, action);
+      setPendingPayments((current) => (current || []).filter((payment) => payment.id !== paymentId));
+      setSummary((current) => ({
+        ...current,
+        pendingPayments: Math.max(0, current.pendingPayments - 1)
+      }));
+      showToast({
+        title: action === "approve" ? "Pembayaran disetujui." : "Pembayaran ditolak.",
+        tone: "success"
+      });
+      await loadOperationalData();
+    } catch (err) {
+      showToast({ title: err instanceof Error ? err.message : "Verifikasi belum dapat diproses.", tone: "info" });
+    } finally {
+      setVerifyingId("");
+    }
   }
 
   return (
@@ -111,109 +89,73 @@ export default function AdminPage() {
       <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <p className="text-sm font-bold text-ink-soft">Panel internal</p>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Admin Dashboard</h1>
+          <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Operasional</h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Metric icon={UsersRound} label="Pelanggan aktif" value={String(summary.activeCustomers)} />
+          <Metric icon={WalletCards} label="Perlu dicek" value={String(summary.pendingPayments)} />
           <Metric icon={Activity} label="Tagihan menunggu" value={String(summary.unpaidBillings)} />
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <section className="glass-panel rounded-xl p-5">
-          <div className="mb-5 flex items-start gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-success-soft text-success">
-              <KeyRound className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-heading text-xl font-bold text-ink">Generate akun pelanggan</h2>
-              <p className="mt-1 text-sm font-semibold text-ink-soft">
-                ID login dibuat otomatis dari nama pelanggan dan nomor unik. Setiap akun punya paket, tagihan, dan
-                riwayat sendiri.
+      {error ? (
+        <ErrorState title="Panel admin belum dapat dimuat" message={error} />
+      ) : !customers || !pendingPayments ? (
+        <SkeletonBlock className="h-96" />
+      ) : (
+        <div className="grid gap-5">
+          <section className="rounded-xl border border-line bg-white shadow-soft">
+            <div className="flex flex-col gap-1 border-b border-line bg-mist/70 px-5 py-4">
+              <p className="font-heading text-xl font-bold text-ink">Pembayaran menunggu verifikasi</p>
+              <p className="text-sm font-semibold text-ink-soft">
+                Tagihan baru menjadi lunas setelah admin menyetujui pembayaran.
               </p>
             </div>
-          </div>
-
-          <form onSubmit={createCustomer} className="grid gap-4">
-            <Field name="name" label="Nama pelanggan" placeholder="Contoh: Faisal Riza" />
-            <label className="block text-sm font-bold text-ink">
-              Kata sandi awal
-              <div className="mt-2 flex gap-2">
-                <input
-                  name="password"
-                  type="text"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  minLength={6}
-                  className="min-w-0 flex-1 rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-                  placeholder="Klik generate atau isi manual"
-                />
-                <Button type="button" variant="ghost" className="shrink-0 bg-white" onClick={generatePassword}>
-                  <RefreshCw className="h-4 w-4" />
-                  Generate
-                </Button>
-              </div>
-            </label>
-            <Field name="phone" label="Nomor WhatsApp" placeholder="0812..." />
-            <Field name="email" label="Email opsional" placeholder="nama@email.com" type="email" required={false} />
-            <label className="block text-sm font-bold text-ink">
-              Paket layanan
-              <select
-                name="packageId"
-                required
-                className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Pilih paket
-                </option>
-                {packages.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} - {item.speedMbps} Mbps - {formatCurrency(item.monthlyPrice)}
-                  </option>
+            {pendingPayments.length === 0 ? (
+              <p className="px-5 py-6 text-sm font-semibold text-ink-soft">Tidak ada pembayaran yang perlu dicek.</p>
+            ) : (
+              <div className="divide-y divide-line/80">
+                {pendingPayments.map((payment) => (
+                  <div key={payment.id} className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_1fr_auto] lg:items-center">
+                    <div>
+                      <p className="font-bold text-ink">{payment.user.name}</p>
+                      <p className="mono mt-1 text-xs font-bold text-ink-soft">
+                        {payment.user.customerId} - {payment.user.loginId}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="mono font-bold text-ink">{formatCurrency(payment.amount)}</p>
+                      <p className="mt-1 text-sm font-semibold text-ink-soft">
+                        {payment.method} - {formatDate(payment.paidAt)}
+                      </p>
+                      <p className="mono mt-1 text-xs font-bold text-ink-soft">{payment.reference}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={verifyingId === payment.id}
+                        onClick={() => verifyPayment(payment.id, "approve")}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Setujui
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="quiet"
+                        disabled={verifyingId === payment.id}
+                        onClick={() => verifyPayment(payment.id, "reject")}
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Tolak
+                      </Button>
+                    </div>
+                  </div>
                 ))}
-              </select>
-            </label>
-            <Field name="monthlyAmount" label="Nominal tagihan opsional" placeholder="325000" type="number" required={false} />
-            <label className="block text-sm font-bold text-ink">
-              Alamat layanan
-              <textarea
-                name="address"
-                required
-                minLength={8}
-                rows={3}
-                className="mt-2 w-full resize-none rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-                placeholder="Alamat lengkap pemasangan"
-              />
-            </label>
-            <Button disabled={submitting || packages.length === 0}>
-              <Plus className="h-4 w-4" />
-              {submitting ? "Membuat akun..." : "Buat akun pelanggan"}
-            </Button>
-          </form>
+              </div>
+            )}
+          </section>
 
-          {generated ? (
-            <div className="mt-5 rounded-xl border border-success/20 bg-success-soft p-4">
-              <p className="text-sm font-bold text-success">Credential siap dibagikan</p>
-              <p className="mono mt-2 text-sm font-bold text-ink">ID login: {generated.loginId}</p>
-              <p className="mono mt-1 text-sm font-bold text-ink">Kata sandi: {generated.password}</p>
-              <p className="mt-2 text-xs font-semibold leading-5 text-ink-soft">
-                Data tagihan dan riwayat pelanggan ini tersimpan terpisah dari pelanggan lain.
-              </p>
-              <Button type="button" variant="ghost" className="mt-4 bg-white" onClick={copyCredentials}>
-                <Copy className="h-4 w-4" />
-                Salin credential
-              </Button>
-            </div>
-          ) : null}
-        </section>
-
-        {error ? (
-          <ErrorState title="Panel admin belum dapat dimuat" message={error} />
-        ) : !customers ? (
-          <SkeletonBlock className="h-96" />
-        ) : (
           <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
             <div className="grid grid-cols-[1.1fr_0.9fr_1fr_auto_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
               <span>Pelanggan</span>
@@ -243,45 +185,10 @@ export default function AdminPage() {
               ))}
             </div>
           </section>
-        )}
-      </div>
+        </div>
+      )}
     </AppShell>
   );
-}
-
-function Field({
-  name,
-  label,
-  placeholder,
-  type = "text",
-  required = true
-}: {
-  name: string;
-  label: string;
-  placeholder: string;
-  type?: string;
-  required?: boolean;
-}) {
-  return (
-    <label className="block text-sm font-bold text-ink">
-      {label}
-      <input
-        name={name}
-        type={type}
-        required={required}
-        className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-        placeholder={placeholder}
-      />
-    </label>
-  );
-}
-
-function createReadablePassword() {
-  const syllables = ["sinyal", "kita", "fiber", "net", "rumah", "akses", "wifi", "portal"];
-  const first = syllables[Math.floor(Math.random() * syllables.length)];
-  const second = syllables[Math.floor(Math.random() * syllables.length)];
-  const number = Math.floor(1000 + Math.random() * 9000);
-  return `${first}-${second}-${number}`;
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof UsersRound; label: string; value: string }) {

@@ -37,7 +37,7 @@ export default function PaymentPage() {
     try {
       await api.pay(data.currentBilling.id, method);
       setPaid(true);
-      showToast({ title: "Pembayaran berhasil dicatat.", tone: "success" });
+      showToast({ title: "Pembayaran dikirim dan menunggu verifikasi admin.", tone: "success" });
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Pembayaran belum dapat diproses.", tone: "info" });
     } finally {
@@ -105,7 +105,7 @@ export default function PaymentPage() {
               <Line label="Metode" value={method} />
             </div>
             <Button onClick={pay} disabled={loading || paid} className="mt-6 w-full bg-white text-ink hover:bg-success-soft">
-              {loading ? "Mencatat pembayaran..." : paid ? "Pembayaran tercatat" : "Bayar sekarang"}
+              {loading ? "Mencatat pembayaran..." : paid ? "Menunggu verifikasi" : "Kirim pembayaran"}
             </Button>
             {paid ? (
               <motion.div
@@ -113,7 +113,7 @@ export default function PaymentPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-5 rounded-xl border border-success/20 bg-success/15 p-4 text-sm font-semibold text-white"
               >
-                Pembayaran berhasil. Riwayat akan diperbarui setelah sistem memproses settlement.
+                Pembayaran berhasil dikirim. Admin akan mengecek dan menyetujui pembayaran sebelum tagihan menjadi lunas.
               </motion.div>
             ) : null}
           </section>

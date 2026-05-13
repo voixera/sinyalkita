@@ -49,29 +49,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Tagihan ini sudah lunas." }, { status: 409 });
     }
 
-    const payment = await prisma.$transaction(async (tx) => {
-      const created = await tx.payment.create({
-        data: {
-          userId: auth.user.id,
-          billingId: billing.id,
-          amount: billing.amount,
-          method: payload.method,
-          reference: `SKT-PAY-${Date.now()}`
-        },
-        include: {
-          billing: { select: { invoiceNo: true, period: true } }
-        }
-      });
-
-      await tx.billing.update({
-        where: { id: billing.id },
-        data: { status: "PAID" }
-      });
-
-      return created;
+    const existingPending = await prisma.payment.findFirst({
+      where: {
+        billingId: billing.id,
+        userId: auth.user.id,
+        status: "PENDING"
+      }
     });
 
-    return NextResponse.json({ payment, billing: { ...billing, status: "PAID" } }, { status: 201 });
+    if (existingPending) {
+      return NextResponse.json({ message: "Pembayaran tagihan ini sedang menunggu verifikasi admin." }, { status: 409 });
+    }
+
+    const payment = await prisma.payment.create({
+      data: {
+        userId: auth.user.id,
+        billingId: billing.id,
+        amount: billing.amount,
+        method: payload.method,
+        status: "PENDING",
+        reference: `SKT-PAY-${Date.now()}`
+      },
+      include: {
+        billing: { select: { invoiceNo: true, period: true } }
+      }
+    });
+
+    return NextResponse.json({ payment, billing }, { status: 201 });
   } catch (error) {
     return apiError(error);
   }

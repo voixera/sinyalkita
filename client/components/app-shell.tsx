@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, CreditCard, FileClock, LayoutDashboard, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
+import { BarChart3, CreditCard, FileClock, KeyRound, LayoutDashboard, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
@@ -13,10 +13,15 @@ const customerNav = [
   { href: "/riwayat", label: "Riwayat", icon: FileClock }
 ];
 
+const adminNav = [
+  { href: "/admin", label: "Operasional", icon: BarChart3 },
+  { href: "/admin/generate", label: "Generate Akun", icon: KeyRound }
+];
+
 export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const nav = admin ? [{ href: "/admin", label: "Operasional", icon: BarChart3 }] : customerNav;
+  const nav = admin ? adminNav : customerNav;
 
   return (
     <div className="min-h-screen bg-mist">

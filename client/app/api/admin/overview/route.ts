@@ -27,13 +27,15 @@ export async function GET(req: NextRequest) {
       billingStatus: user.billings[0]?.status || "UNPAID",
       amount: user.billings[0]?.amount || 0
     }));
+    const pendingPayments = await prisma.payment.count({ where: { status: "PENDING" } });
 
     return NextResponse.json({
       customers,
       summary: {
         totalCustomers: customers.length,
         activeCustomers: customers.filter((customer) => customer.serviceStatus === "ACTIVE").length,
-        unpaidBillings: customers.filter((customer) => customer.billingStatus === "UNPAID").length
+        unpaidBillings: customers.filter((customer) => customer.billingStatus === "UNPAID").length,
+        pendingPayments
       }
     });
   } catch (error) {

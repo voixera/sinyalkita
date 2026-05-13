@@ -1,6 +1,7 @@
 export type Role = "CUSTOMER" | "ADMIN";
 export type ServiceStatus = "ACTIVE" | "MAINTENANCE" | "SUSPENDED";
 export type BillingStatus = "UNPAID" | "PAID" | "OVERDUE";
+export type PaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
 
 export type User = {
   id: string;
@@ -39,6 +40,7 @@ export type Payment = {
   id: string;
   method: string;
   amount: number;
+  status: PaymentStatus;
   paidAt: string;
   reference: string;
   billing: Pick<Billing, "invoiceNo" | "period">;
