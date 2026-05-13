@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Copy, KeyRound, Plus, UsersRound } from "lucide-react";
+import { Activity, Copy, KeyRound, Plus, RefreshCw, UsersRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
@@ -31,18 +31,29 @@ type GeneratedCredentials = {
   password: string;
 };
 
+type Summary = {
+  totalCustomers: number;
+  activeCustomers: number;
+  unpaidBillings: number;
+};
+
 export default function AdminPage() {
   const [customers, setCustomers] = useState<Row[] | null>(null);
   const [packages, setPackages] = useState<PackageOption[]>([]);
+  const [summary, setSummary] = useState<Summary>({ totalCustomers: 0, activeCustomers: 0, unpaidBillings: 0 });
   const [error, setError] = useState("");
   const [generated, setGenerated] = useState<GeneratedCredentials | null>(null);
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
     api
       .adminOverview()
-      .then((data) => setCustomers(data.customers))
+      .then((data) => {
+        setCustomers(data.customers);
+        setSummary(data.summary);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat."));
     api.adminPackages().then((data) => setPackages(data.packages)).catch(() => setPackages([]));
   }, []);
@@ -66,14 +77,26 @@ export default function AdminPage() {
     try {
       const result = await api.createCustomer(payload);
       setCustomers((current) => [result.customer, ...(current || [])]);
+      setSummary((current) => ({
+        totalCustomers: current.totalCustomers + 1,
+        activeCustomers: current.activeCustomers + 1,
+        unpaidBillings: current.unpaidBillings + (result.customer.billingStatus === "UNPAID" ? 1 : 0)
+      }));
       setGenerated(result.credentials);
       event.currentTarget.reset();
+      setPassword("");
       showToast({ title: "Akun pelanggan berhasil dibuat.", tone: "success" });
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Akun pelanggan belum dapat dibuat.", tone: "info" });
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function generatePassword() {
+    const nextPassword = createReadablePassword();
+    setPassword(nextPassword);
+    showToast({ title: "Kata sandi awal dibuat otomatis.", tone: "success" });
   }
 
   async function copyCredentials() {
@@ -91,8 +114,8 @@ export default function AdminPage() {
           <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Admin Dashboard</h1>
         </div>
         <div className="flex gap-3">
-          <Metric icon={UsersRound} label="Pelanggan aktif" value="1.284" />
-          <Metric icon={Activity} label="Uptime bulan ini" value="99,92%" />
+          <Metric icon={UsersRound} label="Pelanggan aktif" value={String(summary.activeCustomers)} />
+          <Metric icon={Activity} label="Tagihan menunggu" value={String(summary.unpaidBillings)} />
         </div>
       </div>
 
@@ -105,14 +128,33 @@ export default function AdminPage() {
             <div>
               <h2 className="font-heading text-xl font-bold text-ink">Generate akun pelanggan</h2>
               <p className="mt-1 text-sm font-semibold text-ink-soft">
-                ID login dibuat otomatis dari nama pelanggan dan nomor unik. Kata sandi ditentukan admin.
+                ID login dibuat otomatis dari nama pelanggan dan nomor unik. Setiap akun punya paket, tagihan, dan
+                riwayat sendiri.
               </p>
             </div>
           </div>
 
           <form onSubmit={createCustomer} className="grid gap-4">
             <Field name="name" label="Nama pelanggan" placeholder="Contoh: Faisal Riza" />
-            <Field name="password" label="Kata sandi awal" placeholder="Minimal 6 karakter" type="password" />
+            <label className="block text-sm font-bold text-ink">
+              Kata sandi awal
+              <div className="mt-2 flex gap-2">
+                <input
+                  name="password"
+                  type="text"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  minLength={6}
+                  className="min-w-0 flex-1 rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+                  placeholder="Klik generate atau isi manual"
+                />
+                <Button type="button" variant="ghost" className="shrink-0 bg-white" onClick={generatePassword}>
+                  <RefreshCw className="h-4 w-4" />
+                  Generate
+                </Button>
+              </div>
+            </label>
             <Field name="phone" label="Nomor WhatsApp" placeholder="0812..." />
             <Field name="email" label="Email opsional" placeholder="nama@email.com" type="email" required={false} />
             <label className="block text-sm font-bold text-ink">
@@ -156,6 +198,9 @@ export default function AdminPage() {
               <p className="text-sm font-bold text-success">Credential siap dibagikan</p>
               <p className="mono mt-2 text-sm font-bold text-ink">ID login: {generated.loginId}</p>
               <p className="mono mt-1 text-sm font-bold text-ink">Kata sandi: {generated.password}</p>
+              <p className="mt-2 text-xs font-semibold leading-5 text-ink-soft">
+                Data tagihan dan riwayat pelanggan ini tersimpan terpisah dari pelanggan lain.
+              </p>
               <Button type="button" variant="ghost" className="mt-4 bg-white" onClick={copyCredentials}>
                 <Copy className="h-4 w-4" />
                 Salin credential
@@ -229,6 +274,14 @@ function Field({
       />
     </label>
   );
+}
+
+function createReadablePassword() {
+  const syllables = ["sinyal", "kita", "fiber", "net", "rumah", "akses", "wifi", "portal"];
+  const first = syllables[Math.floor(Math.random() * syllables.length)];
+  const second = syllables[Math.floor(Math.random() * syllables.length)];
+  const number = Math.floor(1000 + Math.random() * 9000);
+  return `${first}-${second}-${number}`;
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof UsersRound; label: string; value: string }) {

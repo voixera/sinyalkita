@@ -28,7 +28,14 @@ export async function GET(req: NextRequest) {
       amount: user.billings[0]?.amount || 0
     }));
 
-    return NextResponse.json({ customers });
+    return NextResponse.json({
+      customers,
+      summary: {
+        totalCustomers: customers.length,
+        activeCustomers: customers.filter((customer) => customer.serviceStatus === "ACTIVE").length,
+        unpaidBillings: customers.filter((customer) => customer.billingStatus === "UNPAID").length
+      }
+    });
   } catch (error) {
     return apiError(error);
   }

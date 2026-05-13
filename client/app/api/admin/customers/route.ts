@@ -28,10 +28,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Paket layanan tidak ditemukan." }, { status: 404 });
     }
 
-    const sequence = await prisma.user.count({ where: { role: "CUSTOMER" } });
-    const uniqueNumber = String(sequence + 1).padStart(5, "0");
-    const loginId = `${slugifyName(payload.name)}${uniqueNumber}`;
-    const customerId = `SKT-${new Date().getFullYear()}-${uniqueNumber}`;
+    const baseNumber = await prisma.user.count({ where: { role: "CUSTOMER" } });
+    const identity = await createUniqueIdentity(payload.name, baseNumber);
     const passwordHash = await bcrypt.hash(payload.password, 10);
     const amount = payload.monthlyAmount || selectedPackage.monthlyPrice;
     const now = new Date();
@@ -42,8 +40,8 @@ export async function POST(req: NextRequest) {
     const customer = await prisma.$transaction(async (tx) => {
       return tx.user.create({
         data: {
-          customerId,
-          loginId,
+          customerId: identity.customerId,
+          loginId: identity.loginId,
           name: payload.name,
           email: payload.email || null,
           passwordHash,
@@ -59,7 +57,7 @@ export async function POST(req: NextRequest) {
           },
           billings: {
             create: {
-              invoiceNo: `INV/SKT/${year}/${month}/${uniqueNumber}`,
+              invoiceNo: `INV/SKT/${year}/${month}/${identity.uniqueNumber}`,
               period,
               amount,
               dueDate: new Date(Date.UTC(year, period.getUTCMonth(), 20)),
@@ -107,4 +105,27 @@ function slugifyName(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "")
     .slice(0, 18);
+}
+
+async function createUniqueIdentity(name: string, baseNumber: number) {
+  const year = new Date().getFullYear();
+  const baseSlug = slugifyName(name) || "pelanggan";
+
+  for (let offset = 1; offset <= 100; offset += 1) {
+    const uniqueNumber = String(baseNumber + offset).padStart(5, "0");
+    const loginId = `${baseSlug}${uniqueNumber}`;
+    const customerId = `SKT-${year}-${uniqueNumber}`;
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [{ loginId }, { customerId }]
+      },
+      select: { id: true }
+    });
+
+    if (!existing) {
+      return { uniqueNumber, loginId, customerId };
+    }
+  }
+
+  throw new Error("Nomor unik pelanggan belum dapat dibuat. Coba lagi.");
 }

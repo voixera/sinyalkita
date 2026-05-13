@@ -54,6 +54,11 @@ export const api = {
         billingStatus: string;
         amount: number;
       }>;
+      summary: {
+        totalCustomers: number;
+        activeCustomers: number;
+        unpaidBillings: number;
+      };
     }>("/admin/overview"),
   adminPackages: () => request<{ packages: Array<Package & { id: string; description: string }> }>("/admin/packages"),
   createCustomer: (payload: {
