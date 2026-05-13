@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 
 const paySchema = z.object({
   billingId: z.string().min(1),
-  method: z.enum(["Transfer BNI", "Transfer BCA", "QRIS", "Transfer Manual"])
+  method: z.enum(["Transfer BNI", "Transfer BCA", "QRIS", "Transfer Manual"]),
+  proofImage: z.string().min(20).max(2_500_000),
+  proofName: z.string().min(1).max(120)
 });
 
 export async function GET(req: NextRequest) {
@@ -68,7 +70,10 @@ export async function POST(req: NextRequest) {
         amount: billing.amount,
         method: payload.method,
         status: "PENDING",
-        reference: `SKT-PAY-${Date.now()}`
+        reference: `SKT-PAY-${Date.now()}`,
+        proofImage: payload.proofImage,
+        proofName: payload.proofName,
+        proofUploadedAt: new Date()
       },
       include: {
         billing: { select: { invoiceNo: true, period: true } }

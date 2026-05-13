@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Building2, CheckCircle2, Landmark, QrCode, WalletCards } from "lucide-react";
+import { Building2, CheckCircle2, Landmark, QrCode, Upload, WalletCards } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -42,6 +42,7 @@ export default function PaymentPage() {
   const [paid, setPaid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [proof, setProof] = useState<{ image: string; name: string } | null>(null);
   const { showToast } = useToast();
   const selectedMethod = methods.find((item) => item.id === method) || methods[0];
 
@@ -53,10 +54,10 @@ export default function PaymentPage() {
   }, []);
 
   async function pay() {
-    if (!data) return;
+    if (!data || !proof) return;
     setLoading(true);
     try {
-      await api.pay(data.currentBilling.id, method);
+      await api.pay(data.currentBilling.id, method, proof);
       setPaid(true);
       showToast({ title: "Pembayaran dikirim dan menunggu verifikasi admin.", tone: "success" });
     } catch (err) {
@@ -64,6 +65,25 @@ export default function PaymentPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function uploadProof(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast({ title: "Bukti transfer harus berupa gambar.", tone: "info" });
+      return;
+    }
+    if (file.size > 2_000_000) {
+      showToast({ title: "Ukuran bukti maksimal 2 MB.", tone: "info" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProof({ image: String(reader.result), name: file.name });
+      showToast({ title: "Bukti transfer siap dikirim.", tone: "success" });
+    };
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -116,6 +136,15 @@ export default function PaymentPage() {
               })}
             </div>
             <PaymentInstruction method={method} />
+            <div className="mt-4 rounded-xl border border-line bg-white p-4">
+              <p className="text-sm font-bold text-ink">Upload bukti transfer</p>
+              <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-ocean/30 bg-mist/60 px-4 py-6 text-center hover:bg-white">
+                <Upload className="h-5 w-5 text-ocean" />
+                <span className="mt-2 text-sm font-bold text-ink">{proof ? proof.name : "Pilih gambar bukti pembayaran"}</span>
+                <span className="mt-1 text-xs font-semibold text-ink-soft">JPG, PNG, atau WEBP maksimal 2 MB</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(event) => uploadProof(event.target.files?.[0] || null)} />
+              </label>
+            </div>
           </section>
 
           <section className="rounded-xl bg-ink p-6 text-white shadow-lift">
@@ -126,8 +155,8 @@ export default function PaymentPage() {
               <Line label="Jatuh tempo" value={formatDate(data.currentBilling.dueDate)} />
               <Line label="Metode" value={selectedMethod.title} />
             </div>
-            <Button onClick={pay} disabled={loading || paid} className="mt-6 w-full bg-success text-white hover:bg-success/90">
-              {loading ? "Mencatat pembayaran..." : paid ? "Menunggu verifikasi" : "Kirim pembayaran"}
+            <Button onClick={pay} disabled={loading || paid || !proof} className="mt-6 w-full bg-success text-white hover:bg-success/90">
+              {loading ? "Mencatat pembayaran..." : paid ? "Menunggu verifikasi" : proof ? "Kirim pembayaran" : "Upload bukti dulu"}
             </Button>
             {paid ? (
               <motion.div
@@ -162,7 +191,7 @@ function PaymentInstruction({ method }: { method: string }) {
         <div className="mt-3 grid gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
           <div className="relative grid aspect-square place-items-center rounded-xl border border-dashed border-line bg-mist p-3">
             <Image
-              src="/payments/qris/qris.png"
+              src="/payments/qris/qris.jpg"
               alt="QRIS SinyalKita"
               width={160}
               height={160}
@@ -173,7 +202,7 @@ function PaymentInstruction({ method }: { method: string }) {
               }}
             />
             <span className="absolute inset-4 grid place-items-center text-center text-xs font-bold text-ink-soft">
-              Letakkan gambar QRIS di public/payments/qris/qris.png
+              Letakkan gambar QRIS di public/payments/qris/qris.jpg
             </span>
           </div>
           <p className="text-sm font-semibold leading-6 text-ink-soft">

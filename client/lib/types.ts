@@ -2,6 +2,7 @@ export type Role = "CUSTOMER" | "ADMIN";
 export type ServiceStatus = "ACTIVE" | "MAINTENANCE" | "SUSPENDED";
 export type BillingStatus = "UNPAID" | "PAID" | "OVERDUE";
 export type PaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
+export type ReportStatus = "OPEN" | "RESOLVED";
 
 export type User = {
   id: string;
@@ -43,7 +44,17 @@ export type Payment = {
   status: PaymentStatus;
   paidAt: string;
   reference: string;
+  proofImage: string | null;
+  proofName: string | null;
   billing: Pick<Billing, "invoiceNo" | "period">;
+};
+
+export type TroubleReport = {
+  id: string;
+  message: string;
+  status: ReportStatus;
+  createdAt: string;
+  resolvedAt: string | null;
 };
 
 export type MeResponse = {
@@ -51,4 +62,5 @@ export type MeResponse = {
   subscription: Subscription;
   currentBilling: Billing;
   payments: Payment[];
+  reports: TroubleReport[];
 };

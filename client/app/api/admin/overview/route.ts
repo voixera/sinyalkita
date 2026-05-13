@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       amount: user.billings[0]?.amount || 0
     }));
     const pendingPayments = await prisma.payment.count({ where: { status: "PENDING" } });
+    const openReports = await prisma.troubleReport.count({ where: { status: "OPEN" } });
 
     return NextResponse.json({
       customers,
@@ -35,7 +36,8 @@ export async function GET(req: NextRequest) {
         totalCustomers: customers.length,
         activeCustomers: customers.filter((customer) => customer.serviceStatus === "ACTIVE").length,
         unpaidBillings: customers.filter((customer) => customer.billingStatus === "UNPAID").length,
-        pendingPayments
+        pendingPayments,
+        openReports
       }
     });
   } catch (error) {

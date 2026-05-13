@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CalendarDays, Gauge, ReceiptText, Router, Signal } from "lucide-react";
+import { AlertTriangle, CalendarDays, Gauge, ReceiptText, Router, Send, Signal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { ErrorState, LinkButton, SkeletonBlock, StatusBadge } from "@/components/ui";
+import { Button, ErrorState, LinkButton, SkeletonBlock, StatusBadge } from "@/components/ui";
+import { useToast } from "@/components/toast";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { MeResponse } from "@/lib/types";
@@ -12,6 +13,9 @@ import type { MeResponse } from "@/lib/types";
 export default function DashboardPage() {
   const [data, setData] = useState<MeResponse | null>(null);
   const [error, setError] = useState("");
+  const [reportMessage, setReportMessage] = useState("WiFi sedang error atau tidak bisa digunakan.");
+  const [reporting, setReporting] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     api
@@ -19,6 +23,22 @@ export default function DashboardPage() {
       .then(setData)
       .catch((err) => setError(err instanceof Error ? err.message : "Data dashboard belum dapat dimuat."));
   }, []);
+
+  async function reportProblem() {
+    if (!data) return;
+    setReporting(true);
+    try {
+      const result = await api.createReport(reportMessage);
+      setData({ ...data, reports: [result.report, ...data.reports] });
+      showToast({ title: "Laporan gangguan dikirim ke admin.", tone: "success" });
+    } catch (err) {
+      showToast({ title: err instanceof Error ? err.message : "Laporan belum dapat dikirim.", tone: "info" });
+    } finally {
+      setReporting(false);
+    }
+  }
+
+  const openReport = data?.reports.find((report) => report.status === "OPEN");
 
   return (
     <AppShell>
@@ -80,6 +100,44 @@ export default function DashboardPage() {
             <MiniCard title="Alamat layanan" value={data.user.address} />
             <MiniCard title="Kontak terdaftar" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
             <MiniCard title="Catatan" value="Layanan ini hanya untuk pelanggan aktif. Pendaftaran publik tidak tersedia." />
+          </section>
+
+          <section className="rounded-xl border border-line bg-white p-5 shadow-soft">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-start gap-3">
+                <div className={`grid h-11 w-11 place-items-center rounded-xl ${openReport ? "bg-warning-soft text-warning" : "bg-success-soft text-success"}`}>
+                  {openReport ? <AlertTriangle className="h-5 w-5" /> : <Signal className="h-5 w-5" />}
+                </div>
+                <div>
+                  <p className="font-heading text-xl font-bold text-ink">
+                    {openReport ? "Laporan gangguan sedang ditangani" : "Koneksi WiFi aman"}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-ink-soft">
+                    {openReport
+                      ? "Admin sudah menerima laporan kamu dan akan melakukan pengecekan."
+                      : "Jika WiFi error atau trouble, kirim report agar admin langsung melihatnya."}
+                  </p>
+                </div>
+              </div>
+              <StatusBadge status={openReport ? "PENDING" : "ACTIVE"} />
+            </div>
+
+            <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+              <label className="block text-sm font-bold text-ink">
+                Detail gangguan
+                <textarea
+                  value={reportMessage}
+                  onChange={(event) => setReportMessage(event.target.value)}
+                  disabled={Boolean(openReport)}
+                  rows={3}
+                  className="mt-2 w-full resize-none rounded-xl border-line bg-mist/60 px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+                />
+              </label>
+              <Button type="button" disabled={Boolean(openReport) || reporting} onClick={reportProblem}>
+                <Send className="h-4 w-4" />
+                {openReport ? "Sudah dilaporkan" : reporting ? "Mengirim..." : "Report problem"}
+              </Button>
+            </div>
           </section>
         </motion.div>
       )}

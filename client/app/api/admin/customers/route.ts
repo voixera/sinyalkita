@@ -64,6 +64,14 @@ export async function POST(req: NextRequest) {
               dueDate: firstBilling.dueDate,
               status: "UNPAID"
             }
+          },
+          generatedAccount: {
+            create: {
+              loginId: identity.loginId,
+              passwordPlain: payload.password,
+              customerName: payload.name,
+              customerId: identity.customerId
+            }
           }
         },
         include: {

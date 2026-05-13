@@ -31,6 +31,11 @@ enum PaymentStatus {
   FAILED
 }
 
+enum ReportStatus {
+  OPEN
+  RESOLVED
+}
+
 model User {
   id           String         @id @default(cuid())
   customerId   String         @unique
@@ -46,6 +51,8 @@ model User {
   subscription Subscription?
   billings     Billing[]
   payments     Payment[]
+  generatedAccount GeneratedAccount?
+  troubleReports TroubleReport[]
 }
 
 model Package {
@@ -91,9 +98,38 @@ model Payment {
   amount    Int
   status    PaymentStatus @default(SUCCESS)
   reference String        @unique
+  proofImage String?
+  proofName  String?
+  proofUploadedAt DateTime?
   paidAt    DateTime      @default(now())
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   billing   Billing       @relation(fields: [billingId], references: [id], onDelete: Cascade)
 
   @@index([userId, paidAt])
+}
+
+model GeneratedAccount {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  loginId       String
+  passwordPlain String
+  customerName  String
+  customerId    String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+}
+
+model TroubleReport {
+  id        String       @id @default(cuid())
+  userId    String
+  message   String
+  status    ReportStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+  resolvedAt DateTime?
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([createdAt])
 }

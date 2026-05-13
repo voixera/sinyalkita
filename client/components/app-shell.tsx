@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, CreditCard, FileClock, KeyRound, LayoutDashboard, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
+import { BarChart3, CreditCard, FileClock, History, KeyRound, LayoutDashboard, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -16,7 +16,8 @@ const customerNav = [
 
 const adminNav = [
   { href: "/admin", label: "Operasional", icon: BarChart3 },
-  { href: "/admin/generate", label: "Generate Akun", icon: KeyRound }
+  { href: "/admin/generate", label: "Generate Akun", icon: KeyRound },
+  { href: "/admin/history", label: "History", icon: History }
 ];
 
 export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {

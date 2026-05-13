@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, CheckCircle2, XCircle, UsersRound, WalletCards } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, ImageIcon, XCircle, UsersRound, WalletCards } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -8,7 +8,7 @@ import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui"
 import { useToast } from "@/components/toast";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/format";
-import type { Payment } from "@/lib/types";
+import type { Payment, TroubleReport } from "@/lib/types";
 
 type Row = {
   customerId: string;
@@ -25,6 +25,7 @@ type Summary = {
   activeCustomers: number;
   unpaidBillings: number;
   pendingPayments: number;
+  openReports: number;
 };
 
 type PendingPayment = Payment & {
@@ -35,14 +36,25 @@ type PendingPayment = Payment & {
   };
 };
 
+type AdminReport = TroubleReport & {
+  user: {
+    customerId: string;
+    name: string;
+    loginId: string;
+    phone: string;
+  };
+};
+
 export default function AdminPage() {
   const [customers, setCustomers] = useState<Row[] | null>(null);
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[] | null>(null);
+  const [reports, setReports] = useState<AdminReport[] | null>(null);
   const [summary, setSummary] = useState<Summary>({
     totalCustomers: 0,
     activeCustomers: 0,
     unpaidBillings: 0,
-    pendingPayments: 0
+    pendingPayments: 0,
+    openReports: 0
   });
   const [error, setError] = useState("");
   const [verifyingId, setVerifyingId] = useState("");
@@ -51,10 +63,11 @@ export default function AdminPage() {
 
   const loadOperationalData = useCallback(async () => {
     try {
-      const [overview, payments] = await Promise.all([api.adminOverview(), api.adminPendingPayments()]);
+      const [overview, payments, reportData] = await Promise.all([api.adminOverview(), api.adminPendingPayments(), api.adminReports()]);
       setCustomers(overview.customers);
       setSummary(overview.summary);
       setPendingPayments(payments.payments);
+      setReports(reportData.reports);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat.");
@@ -87,6 +100,16 @@ export default function AdminPage() {
     }
   }
 
+  async function resolveReport(reportId: string) {
+    try {
+      await api.resolveReport(reportId);
+      showToast({ title: "Laporan ditandai selesai.", tone: "success" });
+      await loadOperationalData();
+    } catch (err) {
+      showToast({ title: err instanceof Error ? err.message : "Laporan belum dapat diperbarui.", tone: "info" });
+    }
+  }
+
   return (
     <AppShell admin>
       <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
@@ -97,13 +120,14 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-3">
           <Metric icon={UsersRound} label="Pelanggan aktif" value={String(summary.activeCustomers)} />
           <Metric icon={WalletCards} label="Perlu dicek" value={String(summary.pendingPayments)} />
+          <Metric icon={AlertTriangle} label="Report gangguan" value={String(summary.openReports)} />
           <Metric icon={Activity} label="Tagihan menunggu" value={String(summary.unpaidBillings)} />
         </div>
       </div>
 
       {error ? (
         <ErrorState title="Panel admin belum dapat dimuat" message={error} />
-      ) : !customers || !pendingPayments ? (
+      ) : !customers || !pendingPayments || !reports ? (
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5">
@@ -132,6 +156,17 @@ export default function AdminPage() {
                         {payment.method} - {formatDate(payment.paidAt)}
                       </p>
                       <p className="mono mt-1 text-xs font-bold text-ink-soft">{payment.reference}</p>
+                      {payment.proofImage ? (
+                        <a
+                          href={payment.proofImage}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2 text-xs font-bold text-ink-soft hover:border-ocean/30 hover:text-ocean"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          Lihat bukti transfer
+                        </a>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                       <Button
@@ -155,6 +190,40 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-line bg-white shadow-soft">
+            <div className="flex flex-col gap-1 border-b border-line bg-mist/70 px-5 py-4">
+              <p className="font-heading text-xl font-bold text-ink">Report problem pelanggan</p>
+              <p className="text-sm font-semibold text-ink-soft">Laporan WiFi error atau trouble dari dashboard pelanggan.</p>
+            </div>
+            {reports.filter((report) => report.status === "OPEN").length === 0 ? (
+              <p className="px-5 py-6 text-sm font-semibold text-ink-soft">Tidak ada laporan gangguan terbuka.</p>
+            ) : (
+              <div className="divide-y divide-line/80">
+                {reports
+                  .filter((report) => report.status === "OPEN")
+                  .map((report) => (
+                    <div key={report.id} className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_1.2fr_auto] lg:items-center">
+                      <div>
+                        <p className="font-bold text-ink">{report.user.name}</p>
+                        <p className="mono mt-1 text-xs font-bold text-ink-soft">
+                          {report.user.customerId} - {report.user.loginId}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-ink-soft">{report.user.phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold leading-6 text-ink">{report.message}</p>
+                        <p className="mt-1 text-xs font-bold text-ink-soft">{formatDate(report.createdAt)}</p>
+                      </div>
+                      <Button type="button" variant="ghost" onClick={() => resolveReport(report.id)}>
+                        <CheckCircle2 className="h-4 w-4" />
+                        Tandai selesai
+                      </Button>
+                    </div>
+                  ))}
               </div>
             )}
           </section>

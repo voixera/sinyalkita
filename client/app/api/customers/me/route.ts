@@ -35,6 +35,10 @@ export async function GET(req: NextRequest) {
               select: { invoiceNo: true, period: true }
             }
           }
+        },
+        troubleReports: {
+          orderBy: { createdAt: "desc" },
+          take: 5
         }
       }
     });
@@ -56,7 +60,8 @@ export async function GET(req: NextRequest) {
       },
       subscription: user.subscription,
       currentBilling: user.billings[0],
-      payments: user.payments
+      payments: user.payments,
+      reports: user.troubleReports
     });
   } catch (error) {
     return apiError(error);

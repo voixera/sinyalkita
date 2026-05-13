@@ -1,4 +1,4 @@
-import type { Billing, MeResponse, Package, Payment, Role } from "@/lib/types";
+import type { Billing, MeResponse, Package, Payment, Role, TroubleReport } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -38,10 +38,10 @@ export const api = {
   me: () => request<MeResponse>("/customers/me"),
   billings: () => request<{ billings: Billing[] }>("/billings"),
   payments: () => request<{ payments: Payment[] }>("/payments"),
-  pay: (billingId: string, method: string) =>
+  pay: (billingId: string, method: string, proof: { image: string; name: string }) =>
     request<{ payment: Payment; billing: Billing }>("/payments", {
       method: "POST",
-      body: JSON.stringify({ billingId, method })
+      body: JSON.stringify({ billingId, method, proofImage: proof.image, proofName: proof.name })
     }),
   adminOverview: () =>
     request<{
@@ -59,12 +59,38 @@ export const api = {
         activeCustomers: number;
         unpaidBillings: number;
         pendingPayments: number;
+        openReports: number;
       };
     }>("/admin/overview"),
   adminPendingPayments: () =>
     request<{
       payments: Array<Payment & { user: { customerId: string; name: string; loginId: string } }>;
     }>("/admin/payments"),
+  adminGeneratedAccounts: () =>
+    request<{
+      accounts: Array<{
+        id: string;
+        customerId: string;
+        customerName: string;
+        loginId: string;
+        passwordPlain: string;
+        createdAt: string;
+      }>;
+    }>("/admin/history"),
+  adminReports: () =>
+    request<{
+      reports: Array<TroubleReport & { user: { customerId: string; name: string; loginId: string; phone: string } }>;
+    }>("/admin/reports"),
+  resolveReport: (reportId: string) =>
+    request<{ report: TroubleReport }>(`/admin/reports/${reportId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "RESOLVED" })
+    }),
+  createReport: (message: string) =>
+    request<{ report: TroubleReport }>("/reports", {
+      method: "POST",
+      body: JSON.stringify({ message })
+    }),
   verifyPayment: (paymentId: string, action: "approve" | "reject") =>
     request<{ payment: Payment }>(`/admin/payments/${paymentId}`, {
       method: "PATCH",
