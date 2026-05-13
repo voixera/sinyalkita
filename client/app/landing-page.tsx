@@ -1,4 +1,4 @@
-import { BadgeCheck, LockKeyhole, Wifi } from "lucide-react";
+import { BadgeCheck, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import { LinkButton } from "@/components/ui";
 
@@ -20,8 +20,8 @@ export default function HomePage() {
 
         <nav className="relative z-10 mx-auto flex max-w-7xl items-center rounded-xl border border-line/70 bg-white/78 px-4 py-3 shadow-soft backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-white">
-              <Wifi className="h-5 w-5" />
+            <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-white shadow-soft">
+              <Image src="/images/logoSinyalKita.png" alt="Logo SinyalKita" width={40} height={40} className="h-10 w-10 object-contain" />
             </span>
             <div>
               <p className="font-heading text-lg font-bold text-ink">SinyalKita</p>

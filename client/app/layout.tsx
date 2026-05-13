@@ -25,7 +25,12 @@ const mono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "SinyalKita | Web Resmi User",
-  description: "Web resmi user SinyalKita untuk informasi layanan, tagihan, dan pembayaran."
+  description: "Web resmi user SinyalKita untuk informasi layanan, tagihan, dan pembayaran.",
+  icons: {
+    icon: "/images/logoSinyalKita.png",
+    shortcut: "/images/logoSinyalKita.png",
+    apple: "/images/logoSinyalKita.png"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

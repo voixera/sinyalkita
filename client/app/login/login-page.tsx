@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LockKeyhole, ShieldCheck } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -39,8 +40,8 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <Link href="/" className="mx-auto mb-8 flex w-fit items-center gap-3 rounded-xl px-3 py-2 hover:bg-white">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-white">
-            <ShieldCheck className="h-5 w-5" />
+          <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-white shadow-soft">
+            <Image src="/images/logoSinyalKita.png" alt="Logo SinyalKita" width={40} height={40} className="h-10 w-10 object-contain" />
           </span>
           <span className="font-heading text-xl font-bold text-ink">SinyalKita</span>
         </Link>
