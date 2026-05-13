@@ -127,25 +127,14 @@ export default function GenerateAccountPage() {
               </label>
               <Field name="phone" label="Nomor WhatsApp" placeholder="0812..." />
               <Field name="email" label="Email opsional" placeholder="nama@email.com" type="email" required={false} />
-              <label className="block text-sm font-bold text-ink">
-                Paket layanan
-                <select
-                  name="packageId"
-                  required
-                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    Pilih paket
-                  </option>
-                  {packages.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} - {item.speedMbps} Mbps - {formatCurrency(item.monthlyPrice)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Field name="monthlyAmount" label="Nominal tagihan opsional" placeholder="325000" type="number" required={false} />
+              <div className="rounded-xl border border-line bg-mist/70 p-4">
+                <p className="text-sm font-bold text-ink">Paket layanan</p>
+                <p className="mt-1 font-semibold text-ink-soft">
+                  {packages[0]?.name || "WiFi Bulanan"} - {formatCurrency(packages[0]?.monthlyPrice || 65000)}
+                </p>
+                <input type="hidden" name="packageId" value={packages[0]?.id || "pkg_wifi_bulanan_65"} />
+                <input type="hidden" name="monthlyAmount" value={packages[0]?.monthlyPrice || 65000} />
+              </div>
               <label className="block text-sm font-bold text-ink">
                 Alamat layanan
                 <textarea

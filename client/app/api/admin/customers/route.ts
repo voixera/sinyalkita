@@ -11,7 +11,7 @@ const createCustomerSchema = z.object({
   password: z.string().min(6),
   phone: z.string().min(8),
   address: z.string().min(8),
-  packageId: z.string().min(1),
+  packageId: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   monthlyAmount: z.coerce.number().int().positive().optional()
 });
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const payload = createCustomerSchema.parse(await req.json());
-    const selectedPackage = await prisma.package.findUnique({ where: { id: payload.packageId } });
+    const selectedPackage = await prisma.package.findUnique({ where: { id: payload.packageId || "pkg_wifi_bulanan_65" } });
 
     if (!selectedPackage) {
       return NextResponse.json({ message: "Paket layanan tidak ditemukan." }, { status: 404 });

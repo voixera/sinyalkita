@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const packages = await prisma.package.findMany({
+      where: { id: "pkg_wifi_bulanan_65" },
       orderBy: { monthlyPrice: "asc" }
     });
 

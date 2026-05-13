@@ -7,27 +7,20 @@ async function main() {
   const passwordCustomer = await bcrypt.hash("pelanggan123", 10);
   const passwordAdmin = await bcrypt.hash("admin123", 10);
 
-  const rumahStabil = await prisma.package.upsert({
-    where: { id: "pkg_rumah_stabil_50" },
-    update: {},
+  const paketWifi = await prisma.package.upsert({
+    where: { id: "pkg_wifi_bulanan_65" },
+    update: {
+      name: "WiFi Bulanan",
+      speedMbps: 20,
+      monthlyPrice: 65000,
+      description: "Paket pelanggan aktif SinyalKita."
+    },
     create: {
-      id: "pkg_rumah_stabil_50",
-      name: "Rumah Stabil 50",
-      speedMbps: 50,
-      monthlyPrice: 325000,
-      description: "Paket pelanggan lama untuk rumah dengan pemakaian harian stabil."
-    }
-  });
-
-  await prisma.package.upsert({
-    where: { id: "pkg_keluarga_fiber_100" },
-    update: {},
-    create: {
-      id: "pkg_keluarga_fiber_100",
-      name: "Keluarga Fiber 100",
-      speedMbps: 100,
-      monthlyPrice: 475000,
-      description: "Paket pelanggan prioritas untuk banyak perangkat."
+      id: "pkg_wifi_bulanan_65",
+      name: "WiFi Bulanan",
+      speedMbps: 20,
+      monthlyPrice: 65000,
+      description: "Paket pelanggan aktif SinyalKita."
     }
   });
 
@@ -45,7 +38,7 @@ async function main() {
       role: "CUSTOMER",
       subscription: {
         create: {
-          packageId: rumahStabil.id,
+          packageId: paketWifi.id,
           status: "ACTIVE",
           startedAt: new Date("2019-04-12")
         }
@@ -68,7 +61,7 @@ async function main() {
     }
   });
 
-  await createBillingSet(faisal.id, 325000, "00123");
+  await createBillingSet(faisal.id, 65000, "00123");
 }
 
 async function createBillingSet(userId, amount, suffix) {

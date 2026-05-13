@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const paySchema = z.object({
   billingId: z.string().min(1),
-  method: z.enum(["Virtual Account BCA", "QRIS", "Transfer Manual"])
+  method: z.enum(["Transfer BNI", "Transfer BCA", "QRIS", "Transfer Manual"])
 });
 
 export async function GET(req: NextRequest) {
