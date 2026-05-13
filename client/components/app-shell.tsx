@@ -69,7 +69,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
           </span>
           <span>
             <span className="block font-heading text-lg font-bold text-ink">SinyalKita</span>
-            <span className="block text-xs font-semibold text-ink-soft">Portal pelanggan</span>
+            <span className="block text-xs font-semibold text-ink-soft">Web resmi user</span>
           </span>
         </Link>
 

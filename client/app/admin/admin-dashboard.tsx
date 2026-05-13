@@ -118,7 +118,7 @@ export default function AdminPage() {
           <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Operasional</h1>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Metric icon={UsersRound} label="Pelanggan aktif" value={String(summary.activeCustomers)} />
+          <Metric icon={UsersRound} label="User aktif" value={String(summary.activeCustomers)} />
           <Metric icon={WalletCards} label="Perlu dicek" value={String(summary.pendingPayments)} />
           <Metric icon={AlertTriangle} label="Report gangguan" value={String(summary.openReports)} />
           <Metric icon={Activity} label="Tagihan menunggu" value={String(summary.unpaidBillings)} />
@@ -196,8 +196,8 @@ export default function AdminPage() {
 
           <section className="rounded-xl border border-line bg-white shadow-soft">
             <div className="flex flex-col gap-1 border-b border-line bg-mist/70 px-5 py-4">
-              <p className="font-heading text-xl font-bold text-ink">Report problem pelanggan</p>
-              <p className="text-sm font-semibold text-ink-soft">Laporan WiFi error atau trouble dari dashboard pelanggan.</p>
+              <p className="font-heading text-xl font-bold text-ink">Report problem user</p>
+              <p className="text-sm font-semibold text-ink-soft">Laporan WiFi error atau trouble dari dashboard user.</p>
             </div>
             {reports.filter((report) => report.status === "OPEN").length === 0 ? (
               <p className="px-5 py-6 text-sm font-semibold text-ink-soft">Tidak ada laporan gangguan terbuka.</p>
@@ -230,7 +230,7 @@ export default function AdminPage() {
 
           <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
             <div className="grid grid-cols-[1.1fr_0.9fr_1fr_auto_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-              <span>Pelanggan</span>
+              <span>User</span>
               <span>Login</span>
               <span>Paket</span>
               <span>Status</span>

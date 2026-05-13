@@ -38,10 +38,10 @@ export const api = {
   me: () => request<MeResponse>("/customers/me"),
   billings: () => request<{ billings: Billing[] }>("/billings"),
   payments: () => request<{ payments: Payment[] }>("/payments"),
-  pay: (billingId: string, method: string, proof: { image: string; name: string }) =>
-    request<{ payment: Payment; billing: Billing }>("/payments", {
+  pay: (billingIds: string[], method: string, proof: { image: string; name: string }) =>
+    request<{ payments: Payment[]; billings: Billing[] }>("/payments", {
       method: "POST",
-      body: JSON.stringify({ billingId, method, proofImage: proof.image, proofName: proof.name })
+      body: JSON.stringify({ billingIds, method, proofImage: proof.image, proofName: proof.name })
     }),
   adminOverview: () =>
     request<{

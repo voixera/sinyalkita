@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ message: "Pelanggan tidak ditemukan." }, { status: 404 });
+      return NextResponse.json({ message: "User tidak ditemukan." }, { status: 404 });
     }
 
     return NextResponse.json({

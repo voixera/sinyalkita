@@ -22,7 +22,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(loginId, password);
-      showToast({ title: "Berhasil masuk ke portal.", tone: "success" });
+      showToast({ title: "Berhasil masuk ke web SinyalKita.", tone: "success" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "ID login atau kata sandi belum sesuai.");
     } finally {
@@ -50,9 +50,9 @@ export default function LoginPage() {
             <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-success-soft text-success">
               <LockKeyhole className="h-5 w-5" />
             </div>
-            <h1 className="font-heading text-3xl font-bold text-ink">Masuk pelanggan</h1>
+            <h1 className="font-heading text-3xl font-bold text-ink">Masuk User</h1>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Portal resmi pelanggan SinyalKita. Akun hanya dibuat oleh admin.
+              Web resmi user SinyalKita. Akun hanya dapat dibuat oleh admin.
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export default function LoginPage() {
           ) : null}
 
           <Button className="mt-6 w-full" disabled={loading}>
-            {loading ? "Memeriksa akses..." : "Masuk ke Portal"}
+            {loading ? "Memeriksa akses..." : "Masuk ke Web"}
           </Button>
 
           <p className="mt-5 rounded-xl border border-line/80 bg-mist/70 p-4 text-xs font-semibold leading-5 text-ink-soft">

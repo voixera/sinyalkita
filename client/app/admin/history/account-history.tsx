@@ -52,7 +52,7 @@ export default function AccountHistoryPage() {
       ) : (
         <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
           <div className="grid grid-cols-[1fr_0.9fr_0.9fr_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
-            <span>Pelanggan</span>
+            <span>User</span>
             <span>ID login</span>
             <span>Kata sandi</span>
             <span />

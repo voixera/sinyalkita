@@ -54,7 +54,7 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mobile-container mobile-stack lg:space-y-6">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
-              <p className="text-sm font-bold text-ink-soft">ID pelanggan {data.user.customerId}</p>
+              <p className="text-sm font-bold text-ink-soft">ID user {data.user.customerId}</p>
               <h1 className="mobile-page-title mt-2 font-heading text-3xl font-bold text-ink lg:text-4xl">
                 Selamat datang kembali, {data.user.name.split(" ")[0]}
               </h1>
@@ -99,7 +99,7 @@ export default function DashboardPage() {
           <section className="mobile-stack lg:grid lg:grid-cols-3 lg:gap-5">
             <MiniCard title="Alamat layanan" value={data.user.address} />
             <MiniCard title="Kontak terdaftar" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
-            <MiniCard title="Catatan" value="Layanan ini hanya untuk pelanggan aktif. Pendaftaran publik tidak tersedia." />
+            <MiniCard title="Catatan" value="Layanan ini hanya tersedia untuk user aktif. Pembuatan akun dilakukan oleh admin." />
           </section>
 
           <section className="mobile-card rounded-xl border border-line bg-white p-5 shadow-soft">

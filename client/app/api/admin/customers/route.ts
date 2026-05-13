@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     if (typeof error === "object" && error && "code" in error && error.code === "P2002") {
-      return NextResponse.json({ message: "ID login, ID pelanggan, invoice, atau email sudah digunakan." }, { status: 409 });
+      return NextResponse.json({ message: "ID login, ID user, invoice, atau email sudah digunakan." }, { status: 409 });
     }
     return apiError(error);
   }
@@ -125,7 +125,7 @@ function getFirstBillingSchedule(startedAt: Date) {
 
 async function createUniqueIdentity(name: string, baseNumber: number) {
   const year = new Date().getFullYear();
-  const baseSlug = slugifyName(name) || "pelanggan";
+  const baseSlug = slugifyName(name) || "user";
 
   for (let offset = 1; offset <= 100; offset += 1) {
     const uniqueNumber = String(baseNumber + offset).padStart(5, "0");
@@ -143,5 +143,5 @@ async function createUniqueIdentity(name: string, baseNumber: number) {
     }
   }
 
-  throw new Error("Nomor unik pelanggan belum dapat dibuat. Coba lagi.");
+  throw new Error("Nomor unik user belum dapat dibuat. Coba lagi.");
 }

@@ -25,7 +25,7 @@ export default function HomePage() {
             </span>
             <div>
               <p className="font-heading text-lg font-bold text-ink">SinyalKita</p>
-              <p className="text-xs font-semibold text-ink-soft">Web Resmi pelanggan</p>
+              <p className="text-xs font-semibold text-ink-soft">Web Resmi User SinyalKita</p>
             </div>
           </div>
         </nav>
@@ -40,11 +40,11 @@ export default function HomePage() {
               ISP Wi-fi SinyalKita
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-soft">
-              Web login resmi untuk pelanggan SinyalKita. Masuk untuk melihat informasi layanan
+              Web login resmi untuk user SinyalKita. Masuk untuk melihat informasi layanan secara aman.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <LinkButton href="/login">
-                  Login
+                Login
                 <LockKeyhole className="h-4 w-4" />
               </LinkButton>
             </div>

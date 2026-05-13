@@ -8,8 +8,8 @@ import { AppShell } from "@/components/app-shell";
 import { Button, ErrorState, SkeletonBlock } from "@/components/ui";
 import { useToast } from "@/components/toast";
 import { api } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/format";
-import type { MeResponse } from "@/lib/types";
+import { formatCurrency, formatDate, shortMonth } from "@/lib/format";
+import type { Billing, MeResponse } from "@/lib/types";
 
 const methods = [
   { id: "Transfer BNI", title: "BNI", desc: "Transfer bank ke rekening SinyalKita", icon: Landmark },
@@ -38,6 +38,8 @@ const paymentDetails: Record<string, { label: string; value: string; note: strin
 
 export default function PaymentPage() {
   const [data, setData] = useState<MeResponse | null>(null);
+  const [billings, setBillings] = useState<Billing[] | null>(null);
+  const [selectedBillingIds, setSelectedBillingIds] = useState<string[]>([]);
   const [method, setMethod] = useState(methods[0].id);
   const [paid, setPaid] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,19 +47,26 @@ export default function PaymentPage() {
   const [proof, setProof] = useState<{ image: string; name: string } | null>(null);
   const { showToast } = useToast();
   const selectedMethod = methods.find((item) => item.id === method) || methods[0];
+  const payableBillings = (billings || []).filter((billing) => billing.status !== "PAID");
+  const selectedBillings = payableBillings.filter((billing) => selectedBillingIds.includes(billing.id));
+  const totalAmount = selectedBillings.reduce((total, billing) => total + billing.amount, 0);
 
   useEffect(() => {
-    api
-      .me()
-      .then(setData)
+    Promise.all([api.me(), api.billings()])
+      .then(([me, billingData]) => {
+        const payable = billingData.billings.filter((billing) => billing.status !== "PAID");
+        setData(me);
+        setBillings(billingData.billings);
+        setSelectedBillingIds(payable[0] ? [payable[0].id] : []);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Data pembayaran belum dapat dimuat."));
   }, []);
 
   async function pay() {
-    if (!data || !proof) return;
+    if (!data || !proof || selectedBillingIds.length === 0) return;
     setLoading(true);
     try {
-      await api.pay(data.currentBilling.id, method, proof);
+      await api.pay(selectedBillingIds, method, proof);
       setPaid(true);
       showToast({ title: "Pembayaran dikirim dan menunggu verifikasi admin.", tone: "success" });
     } catch (err) {
@@ -86,6 +95,13 @@ export default function PaymentPage() {
     reader.readAsDataURL(file);
   }
 
+  function toggleBilling(billingId: string) {
+    setPaid(false);
+    setSelectedBillingIds((current) =>
+      current.includes(billingId) ? current.filter((id) => id !== billingId) : [...current, billingId]
+    );
+  }
+
   return (
     <AppShell>
       <div className="mb-6">
@@ -95,18 +111,64 @@ export default function PaymentPage() {
 
       {error ? (
         <ErrorState title="Pembayaran belum dapat dimuat" message={error} />
-      ) : !data ? (
+      ) : !data || !billings ? (
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
           <section className="glass-panel rounded-xl p-5">
+            <div className="mb-5 rounded-xl border border-line bg-white p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-heading text-xl font-bold text-ink">Pilih tagihan</p>
+                  <p className="mt-1 text-sm text-ink-soft">User dapat membayar satu atau beberapa tagihan sekaligus.</p>
+                </div>
+                {payableBillings.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBillingIds(payableBillings.map((billing) => billing.id))}
+                    className="rounded-lg px-3 py-2 text-xs font-bold text-ocean hover:bg-mist"
+                  >
+                    Pilih semua
+                  </button>
+                ) : null}
+              </div>
+              <div className="mt-4 grid gap-3">
+                {payableBillings.length === 0 ? (
+                  <p className="rounded-xl bg-mist/70 p-4 text-sm font-semibold text-ink-soft">Tidak ada tagihan yang perlu dibayar.</p>
+                ) : (
+                  payableBillings.map((billing) => {
+                    const active = selectedBillingIds.includes(billing.id);
+                    return (
+                      <button
+                        key={billing.id}
+                        type="button"
+                        onClick={() => toggleBilling(billing.id)}
+                        className={`flex items-center justify-between gap-4 rounded-xl border p-4 text-left ${
+                          active ? "border-ocean/30 bg-mist shadow-soft" : "border-line bg-white hover:border-ocean/25"
+                        }`}
+                      >
+                        <span>
+                          <span className="block font-bold text-ink">{shortMonth(billing.period)}</span>
+                          <span className="mt-1 block text-sm text-ink-soft">Jatuh tempo {formatDate(billing.dueDate)}</span>
+                        </span>
+                        <span className="flex items-center gap-3">
+                          <span className="mono font-bold text-ink">{formatCurrency(billing.amount)}</span>
+                          {active ? <CheckCircle2 className="h-5 w-5 text-success" /> : null}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             <div className="mb-5 flex items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-xl bg-success-soft text-success">
                 <WalletCards className="h-5 w-5" />
               </div>
               <div>
                 <p className="font-heading text-xl font-bold text-ink">Pilih metode</p>
-                <p className="text-sm text-ink-soft">Pilih salah satu metode yang tersedia untuk pelanggan aktif.</p>
+                <p className="text-sm text-ink-soft">Pilih metode pembayaran yang tersedia untuk user aktif.</p>
               </div>
             </div>
             <div className="grid gap-3">
@@ -149,14 +211,30 @@ export default function PaymentPage() {
 
           <section className="rounded-xl bg-ink p-6 text-white shadow-lift">
             <p className="text-sm font-bold text-white/60">Total pembayaran</p>
-            <p className="mono mt-2 text-4xl font-bold">{formatCurrency(data.currentBilling.amount)}</p>
+            <p className="mono mt-2 text-4xl font-bold">{formatCurrency(totalAmount)}</p>
             <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-sm">
-              <Line label="Invoice" value={data.currentBilling.invoiceNo} mono />
-              <Line label="Jatuh tempo" value={formatDate(data.currentBilling.dueDate)} />
+              <Line label="Tagihan dipilih" value={`${selectedBillings.length} tagihan`} />
+              <Line
+                label="Invoice"
+                value={selectedBillings.map((billing) => billing.invoiceNo).join(", ") || "-"}
+                mono
+              />
               <Line label="Metode" value={selectedMethod.title} />
             </div>
-            <Button onClick={pay} disabled={loading || paid || !proof} className="mt-6 w-full bg-success text-white hover:bg-success/90">
-              {loading ? "Mencatat pembayaran..." : paid ? "Menunggu verifikasi" : proof ? "Kirim pembayaran" : "Upload bukti dulu"}
+            <Button
+              onClick={pay}
+              disabled={loading || paid || !proof || selectedBillingIds.length === 0}
+              className="mt-6 w-full bg-success text-white hover:bg-success/90"
+            >
+              {loading
+                ? "Mencatat pembayaran..."
+                : paid
+                  ? "Menunggu verifikasi"
+                  : !proof
+                    ? "Upload bukti dulu"
+                    : selectedBillingIds.length === 0
+                      ? "Pilih tagihan dulu"
+                      : "Kirim pembayaran"}
             </Button>
             {paid ? (
               <motion.div

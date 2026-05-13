@@ -61,9 +61,9 @@ export default function GenerateAccountPage() {
       setGenerated(result.credentials);
       event.currentTarget.reset();
       setPassword("");
-      showToast({ title: "Akun pelanggan berhasil dibuat.", tone: "success" });
+      showToast({ title: "Akun user berhasil dibuat.", tone: "success" });
     } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Akun pelanggan belum dapat dibuat.", tone: "info" });
+      showToast({ title: err instanceof Error ? err.message : "Akun user belum dapat dibuat.", tone: "info" });
     } finally {
       setSubmitting(false);
     }
@@ -79,14 +79,14 @@ export default function GenerateAccountPage() {
     if (!generated) return;
     const text = `ID login: ${generated.loginId}\nKata sandi: ${generated.password}`;
     await navigator.clipboard.writeText(text);
-    showToast({ title: "Credential pelanggan disalin.", tone: "success" });
+    showToast({ title: "Credential user disalin.", tone: "success" });
   }
 
   return (
     <AppShell admin>
       <div className="mb-6">
         <p className="text-sm font-bold text-ink-soft">Pembuatan akun</p>
-        <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Generate Akun Pelanggan</h1>
+        <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Generate Akun User</h1>
       </div>
 
       {error ? (
@@ -101,16 +101,16 @@ export default function GenerateAccountPage() {
                 <KeyRound className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="font-heading text-xl font-bold text-ink">Data akun pelanggan</h2>
+                <h2 className="font-heading text-xl font-bold text-ink">Data akun user</h2>
                 <p className="mt-1 text-sm font-semibold text-ink-soft">
-                  ID login dibuat otomatis dari nama pelanggan dan nomor unik. Pelanggan baru diberi masa aktif 1 bulan
+                  ID login dibuat otomatis dari nama user dan nomor unik. User baru diberi masa aktif 1 bulan
                   sebelum tagihan pertama jatuh tempo.
                 </p>
               </div>
             </div>
 
             <form onSubmit={createCustomer} className="grid gap-4">
-              <Field name="name" label="Nama pelanggan" placeholder="Contoh: Faisal Riza" />
+              <Field name="name" label="Nama user" placeholder="Contoh: Faisal Riza" />
               <label className="block text-sm font-bold text-ink">
                 Kata sandi awal
                 <div className="mt-2 flex gap-2">
@@ -151,12 +151,12 @@ export default function GenerateAccountPage() {
                   minLength={8}
                   rows={3}
                   className="mt-2 w-full resize-none rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-                  placeholder="Alamat lengkap pemasangan"
+                  placeholder="Alamat lengkap layanan"
                 />
               </label>
               <Button disabled={submitting || packages.length === 0}>
                 <Plus className="h-4 w-4" />
-                {submitting ? "Membuat akun..." : "Buat akun pelanggan"}
+                {submitting ? "Membuat akun..." : "Buat akun user"}
               </Button>
             </form>
           </section>
@@ -165,7 +165,7 @@ export default function GenerateAccountPage() {
             <p className="font-heading text-xl font-bold text-ink">Credential terakhir</p>
             {generated ? (
               <div className="mt-5 rounded-xl border border-success/20 bg-success-soft p-4">
-                <p className="text-sm font-bold text-success">Siap dibagikan ke pelanggan</p>
+                <p className="text-sm font-bold text-success">Siap dibagikan ke user</p>
                 <p className="mono mt-2 text-sm font-bold text-ink">ID login: {generated.loginId}</p>
                 <p className="mono mt-1 text-sm font-bold text-ink">Kata sandi: {generated.password}</p>
                 <p className="mt-2 text-xs font-semibold leading-5 text-ink-soft">
@@ -178,7 +178,7 @@ export default function GenerateAccountPage() {
               </div>
             ) : (
               <p className="mt-4 rounded-xl border border-line bg-mist/70 p-4 text-sm font-semibold text-ink-soft">
-                Credential akan muncul setelah akun pelanggan dibuat.
+                Credential akan muncul setelah akun user dibuat.
               </p>
             )}
           </section>
@@ -216,7 +216,7 @@ function Field({
 }
 
 function createReadablePassword() {
-  const syllables = ["sinyal", "kita", "fiber", "net", "rumah", "akses", "wifi", "portal"];
+  const syllables = ["sinyal", "kita", "fiber", "net", "rumah", "akses", "wifi", "web"];
   const first = syllables[Math.floor(Math.random() * syllables.length)];
   const second = syllables[Math.floor(Math.random() * syllables.length)];
   const number = Math.floor(1000 + Math.random() * 9000);
