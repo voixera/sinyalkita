@@ -1,11 +1,23 @@
 "use client";
 
-import { BarChart3, CreditCard, FileClock, History, KeyRound, LayoutDashboard, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  BarChart3,
+  CreditCard,
+  FileClock,
+  History,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  ReceiptText,
+  ShieldCheck
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { clsx } from "clsx";
 import { useAuth } from "@/components/auth-provider";
+import { api } from "@/lib/api";
 
 const customerNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +28,8 @@ const customerNav = [
 
 const adminNav = [
   { href: "/admin", label: "Operasional", icon: BarChart3 },
+  { href: "/admin/payments", label: "Verifikasi", icon: CreditCard, badge: "pendingPayments" },
+  { href: "/admin/reports", label: "Report", icon: AlertTriangle, badge: "openReports" },
   { href: "/admin/generate", label: "Generate Akun", icon: KeyRound },
   { href: "/admin/history", label: "History", icon: History }
 ];
@@ -24,6 +38,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const { logout, ready, token, user } = useAuth();
+  const [adminBadges, setAdminBadges] = useState({ pendingPayments: 0, openReports: 0 });
   const nav = admin ? adminNav : customerNav;
   const blocked =
     !ready || !token || !user || (admin && user.role !== "ADMIN") || (!admin && user.role === "ADMIN");
@@ -45,6 +60,22 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
       router.replace("/admin");
     }
   }, [admin, ready, router, token, user]);
+
+  useEffect(() => {
+    if (!ready || !admin || user?.role !== "ADMIN") return;
+
+    api
+      .adminOverview()
+      .then((data) =>
+        setAdminBadges({
+          pendingPayments: data.summary.pendingPayments,
+          openReports: data.summary.openReports
+        })
+      )
+      .catch(() => {
+        setAdminBadges({ pendingPayments: 0, openReports: 0 });
+      });
+  }, [admin, ready, user?.role, pathname]);
 
   if (blocked) {
     return (
@@ -77,6 +108,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
           {nav.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
+            const badgeValue = admin && "badge" in item ? adminBadges[item.badge as keyof typeof adminBadges] : 0;
             return (
               <Link
                 key={item.href}
@@ -89,7 +121,12 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {badgeValue > 0 ? (
+                  <span className="grid min-w-5 place-items-center rounded-full bg-danger px-1.5 py-0.5 text-[11px] font-bold leading-none text-white">
+                    {badgeValue > 99 ? "99+" : badgeValue}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -119,6 +156,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
         {nav.map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href;
+          const badgeValue = admin && "badge" in item ? adminBadges[item.badge as keyof typeof adminBadges] : 0;
           return (
             <Link
               key={item.href}
@@ -128,7 +166,14 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
                 active ? "bg-ink text-white shadow-soft" : "text-ink-soft"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <span className="relative">
+                <Icon className="h-4 w-4" />
+                {badgeValue > 0 ? (
+                  <span className="absolute -right-2 -top-2 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold leading-4 text-white">
+                    {badgeValue > 9 ? "9+" : badgeValue}
+                  </span>
+                ) : null}
+              </span>
               <span>{item.label}</span>
             </Link>
           );

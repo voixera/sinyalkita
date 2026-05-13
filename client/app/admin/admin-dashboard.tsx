@@ -1,14 +1,13 @@
 "use client";
 
-import { Activity, AlertTriangle, CheckCircle2, ExternalLink, ImageIcon, X, XCircle, UsersRound, WalletCards } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, CreditCard, UsersRound, WalletCards } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
-import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
-import { useToast } from "@/components/toast";
+import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/format";
-import type { Payment, TroubleReport } from "@/lib/types";
+import { formatCurrency } from "@/lib/format";
 
 type Row = {
   customerId: string;
@@ -28,27 +27,8 @@ type Summary = {
   openReports: number;
 };
 
-type PendingPayment = Payment & {
-  user: {
-    customerId: string;
-    name: string;
-    loginId: string;
-  };
-};
-
-type AdminReport = TroubleReport & {
-  user: {
-    customerId: string;
-    name: string;
-    loginId: string;
-    phone: string;
-  };
-};
-
 export default function AdminPage() {
   const [customers, setCustomers] = useState<Row[] | null>(null);
-  const [pendingPayments, setPendingPayments] = useState<PendingPayment[] | null>(null);
-  const [reports, setReports] = useState<AdminReport[] | null>(null);
   const [summary, setSummary] = useState<Summary>({
     totalCustomers: 0,
     activeCustomers: 0,
@@ -57,18 +37,13 @@ export default function AdminPage() {
     openReports: 0
   });
   const [error, setError] = useState("");
-  const [verifyingId, setVerifyingId] = useState("");
-  const [proofPreview, setProofPreview] = useState<PendingPayment | null>(null);
   const { ready, user } = useAuth();
-  const { showToast } = useToast();
 
   const loadOperationalData = useCallback(async () => {
     try {
-      const [overview, payments, reportData] = await Promise.all([api.adminOverview(), api.adminPendingPayments(), api.adminReports()]);
+      const overview = await api.adminOverview();
       setCustomers(overview.customers);
       setSummary(overview.summary);
-      setPendingPayments(payments.payments);
-      setReports(reportData.reports);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat.");
@@ -80,36 +55,9 @@ export default function AdminPage() {
     loadOperationalData();
   }, [loadOperationalData, ready, user?.role]);
 
-  async function verifyPayment(paymentId: string, action: "approve" | "reject") {
-    setVerifyingId(paymentId);
-    try {
-      await api.verifyPayment(paymentId, action);
-      setPendingPayments((current) => (current || []).filter((payment) => payment.id !== paymentId));
-      setSummary((current) => ({
-        ...current,
-        pendingPayments: Math.max(0, current.pendingPayments - 1)
-      }));
-      showToast({
-        title: action === "approve" ? "Pembayaran disetujui." : "Pembayaran ditolak.",
-        tone: "success"
-      });
-      await loadOperationalData();
-    } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Verifikasi belum dapat diproses.", tone: "info" });
-    } finally {
-      setVerifyingId("");
-    }
-  }
-
-  async function resolveReport(reportId: string) {
-    try {
-      await api.resolveReport(reportId);
-      showToast({ title: "Laporan ditandai selesai.", tone: "success" });
-      await loadOperationalData();
-    } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Laporan belum dapat diperbarui.", tone: "info" });
-    }
-  }
+  const activeRate = summary.totalCustomers ? Math.round((summary.activeCustomers / summary.totalCustomers) * 100) : 0;
+  const unpaidRate = summary.totalCustomers ? Math.round((summary.unpaidBillings / summary.totalCustomers) * 100) : 0;
+  const totalMonthly = (customers || []).reduce((total, customer) => total + customer.amount, 0);
 
   return (
     <AppShell admin>
@@ -128,95 +76,42 @@ export default function AdminPage() {
 
       {error ? (
         <ErrorState title="Panel admin belum dapat dimuat" message={error} />
-      ) : !customers || !pendingPayments || !reports ? (
+      ) : !customers ? (
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5">
-          <section className="rounded-xl border border-line bg-white shadow-soft">
-            <div className="flex flex-col gap-1 border-b border-line bg-mist/70 px-5 py-4">
-              <p className="font-heading text-xl font-bold text-ink">Pembayaran menunggu verifikasi</p>
-              <p className="text-sm font-semibold text-ink-soft">
-                Tagihan baru menjadi lunas setelah admin menyetujui pembayaran.
-              </p>
-            </div>
-            {pendingPayments.length === 0 ? (
-              <p className="px-5 py-6 text-sm font-semibold text-ink-soft">Tidak ada pembayaran yang perlu dicek.</p>
-            ) : (
-              <div className="divide-y divide-line/80">
-                {pendingPayments.map((payment) => (
-                  <div key={payment.id} className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_1fr_auto] lg:items-center">
-                    <div>
-                      <p className="font-bold text-ink">{payment.user.name}</p>
-                      <p className="mono mt-1 text-xs font-bold text-ink-soft">
-                        {payment.user.customerId} - {payment.user.loginId}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="mono font-bold text-ink">{formatCurrency(payment.amount)}</p>
-                      <p className="mt-1 text-sm font-semibold text-ink-soft">
-                        {payment.method} - {formatDate(payment.paidAt)}
-                      </p>
-                      <p className="mono mt-1 text-xs font-bold text-ink-soft">{payment.reference}</p>
-                      <ProofButton payment={payment} onOpen={() => setProofPreview(payment)} />
-                    </div>
-                    <div className="flex flex-wrap gap-2 lg:justify-end">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={verifyingId === payment.id}
-                        onClick={() => verifyPayment(payment.id, "approve")}
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Setujui
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="quiet"
-                        disabled={verifyingId === payment.id}
-                        onClick={() => verifyPayment(payment.id, "reject")}
-                      >
-                        <XCircle className="h-4 w-4" />
-                        Tolak
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+          <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-xl border border-line bg-white p-5 shadow-soft">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-heading text-xl font-bold text-ink">Diagram operasional</p>
+                  <p className="mt-1 text-sm font-semibold text-ink-soft">Ringkasan kesehatan layanan dan tagihan user.</p>
+                </div>
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-success-soft text-success">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
               </div>
-            )}
-          </section>
 
-          <section className="rounded-xl border border-line bg-white shadow-soft">
-            <div className="flex flex-col gap-1 border-b border-line bg-mist/70 px-5 py-4">
-              <p className="font-heading text-xl font-bold text-ink">Report problem user</p>
-              <p className="text-sm font-semibold text-ink-soft">Laporan WiFi error atau trouble dari dashboard user.</p>
-            </div>
-            {reports.filter((report) => report.status === "OPEN").length === 0 ? (
-              <p className="px-5 py-6 text-sm font-semibold text-ink-soft">Tidak ada laporan gangguan terbuka.</p>
-            ) : (
-              <div className="divide-y divide-line/80">
-                {reports
-                  .filter((report) => report.status === "OPEN")
-                  .map((report) => (
-                    <div key={report.id} className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_1.2fr_auto] lg:items-center">
-                      <div>
-                        <p className="font-bold text-ink">{report.user.name}</p>
-                        <p className="mono mt-1 text-xs font-bold text-ink-soft">
-                          {report.user.customerId} - {report.user.loginId}
-                        </p>
-                        <p className="mt-1 text-xs font-bold text-ink-soft">{report.user.phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold leading-6 text-ink">{report.message}</p>
-                        <p className="mt-1 text-xs font-bold text-ink-soft">{formatDate(report.createdAt)}</p>
-                      </div>
-                      <Button type="button" variant="ghost" onClick={() => resolveReport(report.id)}>
-                        <CheckCircle2 className="h-4 w-4" />
-                        Tandai selesai
-                      </Button>
-                    </div>
-                  ))}
+              <div className="mt-6 grid gap-4">
+                <ProgressRow label="User aktif" value={activeRate} detail={`${summary.activeCustomers}/${summary.totalCustomers} user`} />
+                <ProgressRow label="Tagihan menunggu" value={unpaidRate} detail={`${summary.unpaidBillings} tagihan`} tone="warning" />
+                <ProgressRow
+                  label="Tindak lanjut admin"
+                  value={Math.min(100, (summary.pendingPayments + summary.openReports) * 18)}
+                  detail={`${summary.pendingPayments + summary.openReports} item`}
+                  tone="danger"
+                />
               </div>
-            )}
+            </div>
+
+            <div className="rounded-xl bg-ink p-5 text-white shadow-lift">
+              <p className="text-sm font-bold text-white/60">Estimasi tagihan aktif</p>
+              <p className="mono mt-3 text-4xl font-bold">{formatCurrency(totalMonthly)}</p>
+              <div className="mt-6 grid gap-3 border-t border-white/10 pt-5">
+                <ActionLink href="/admin/payments" icon={CreditCard} label="Verifikasi pembayaran" count={summary.pendingPayments} />
+                <ActionLink href="/admin/reports" icon={AlertTriangle} label="Report problem user" count={summary.openReports} />
+              </div>
+            </div>
           </section>
 
           <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
@@ -250,83 +145,7 @@ export default function AdminPage() {
           </section>
         </div>
       )}
-      {proofPreview ? <ProofPreviewModal payment={proofPreview} onClose={() => setProofPreview(null)} /> : null}
     </AppShell>
-  );
-}
-
-function ProofButton({ payment, onOpen }: { payment: PendingPayment; onOpen: () => void }) {
-  if (!payment.proofImage) {
-    return (
-      <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-warning/20 bg-warning-soft px-3 py-2 text-xs font-bold text-warning">
-        <ImageIcon className="h-4 w-4" />
-        Bukti belum tersedia
-      </p>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="mt-3 flex w-full max-w-xs items-center gap-3 rounded-xl border border-line bg-white p-2 text-left shadow-soft hover:border-ocean/30 hover:bg-mist sm:w-fit"
-    >
-      <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-mist">
-        <img src={payment.proofImage} alt={`Bukti transfer ${payment.user.name}`} className="h-full w-full object-cover" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-bold text-ink">Lihat bukti transfer</span>
-        <span className="block truncate text-xs font-semibold text-ink-soft">{payment.proofName || payment.reference}</span>
-      </span>
-    </button>
-  );
-}
-
-function ProofPreviewModal({ payment, onClose }: { payment: PendingPayment; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 bg-ink/70 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true">
-      <div className="mx-auto flex h-full max-w-4xl flex-col rounded-xl bg-white shadow-lift">
-        <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-5">
-          <div>
-            <p className="font-heading text-lg font-bold text-ink">Bukti transfer</p>
-            <p className="mt-1 text-xs font-semibold text-ink-soft">
-              {payment.user.name} - {formatCurrency(payment.amount)} - {payment.method}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-ink-soft hover:bg-mist hover:text-ink"
-            aria-label="Tutup bukti transfer"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-auto bg-mist p-3 sm:p-5">
-          <div className="grid min-h-full place-items-center">
-            <img
-              src={payment.proofImage || ""}
-              alt={`Bukti transfer ${payment.user.name}`}
-              className="max-h-[72vh] w-auto max-w-full rounded-xl border border-line bg-white object-contain shadow-soft"
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 border-t border-line px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="mono truncate text-xs font-bold text-ink-soft">{payment.reference}</p>
-          {payment.proofImage ? (
-            <a
-              href={payment.proofImage}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-bold text-white hover:bg-ocean"
-            >
-              Buka gambar penuh
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          ) : null}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -341,5 +160,42 @@ function Metric({ icon: Icon, label, value }: { icon: typeof UsersRound; label: 
         </div>
       </div>
     </div>
+  );
+}
+
+function ProgressRow({
+  label,
+  value,
+  detail,
+  tone = "success"
+}: {
+  label: string;
+  value: number;
+  detail: string;
+  tone?: "success" | "warning" | "danger";
+}) {
+  const color = tone === "success" ? "bg-success" : tone === "warning" ? "bg-warning" : "bg-danger";
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-sm font-bold text-ink">{label}</p>
+        <p className="mono text-xs font-bold text-ink-soft">{detail}</p>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-mist">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(6, Math.min(value, 100))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function ActionLink({ href, icon: Icon, label, count }: { href: string; icon: typeof CreditCard; label: string; count: number }) {
+  return (
+    <Link href={href} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4 hover:bg-white/[0.1]">
+      <span className="flex items-center gap-3">
+        <Icon className="h-5 w-5 text-white/70" />
+        <span className="font-bold">{label}</span>
+      </span>
+      <span className="mono rounded-full bg-white px-2 py-1 text-xs font-bold text-ink">{count}</span>
+    </Link>
   );
 }
