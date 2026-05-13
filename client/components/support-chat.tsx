@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, Send, X } from "lucide-react";
 import Image from "next/image";
 import { FormEvent, useRef, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -16,11 +17,16 @@ const openingMessage: ChatMessage = {
 };
 
 export function SupportChat() {
+  const { ready, token, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([openingMessage]);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  if (!ready || !token || user?.role !== "CUSTOMER") {
+    return null;
+  }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
