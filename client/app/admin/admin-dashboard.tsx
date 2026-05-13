@@ -1,8 +1,9 @@
 "use client";
 
 import { Activity, CheckCircle2, XCircle, UsersRound, WalletCards } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { useAuth } from "@/components/auth-provider";
 import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { useToast } from "@/components/toast";
 import { api } from "@/lib/api";
@@ -45,13 +46,10 @@ export default function AdminPage() {
   });
   const [error, setError] = useState("");
   const [verifyingId, setVerifyingId] = useState("");
+  const { ready, user } = useAuth();
   const { showToast } = useToast();
 
-  useEffect(() => {
-    loadOperationalData();
-  }, []);
-
-  async function loadOperationalData() {
+  const loadOperationalData = useCallback(async () => {
     try {
       const [overview, payments] = await Promise.all([api.adminOverview(), api.adminPendingPayments()]);
       setCustomers(overview.customers);
@@ -61,7 +59,12 @@ export default function AdminPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat.");
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!ready || user?.role !== "ADMIN") return;
+    loadOperationalData();
+  }, [loadOperationalData, ready, user?.role]);
 
   async function verifyPayment(paymentId: string, action: "approve" | "reject") {
     setVerifyingId(paymentId);

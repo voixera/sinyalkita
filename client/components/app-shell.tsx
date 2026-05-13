@@ -2,7 +2,8 @@
 
 import { BarChart3, CreditCard, FileClock, KeyRound, LayoutDashboard, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { clsx } from "clsx";
 import { useAuth } from "@/components/auth-provider";
 
@@ -20,8 +21,43 @@ const adminNav = [
 
 export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const router = useRouter();
+  const { logout, ready, token, user } = useAuth();
   const nav = admin ? adminNav : customerNav;
+  const blocked =
+    !ready || !token || !user || (admin && user.role !== "ADMIN") || (!admin && user.role === "ADMIN");
+
+  useEffect(() => {
+    if (!ready) return;
+
+    if (!token || !user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (admin && user.role !== "ADMIN") {
+      router.replace("/dashboard");
+      return;
+    }
+
+    if (!admin && user.role === "ADMIN") {
+      router.replace("/admin");
+    }
+  }, [admin, ready, router, token, user]);
+
+  if (blocked) {
+    return (
+      <div className="min-h-screen bg-mist px-4 py-6 lg:px-10 lg:py-9">
+        <div className="mx-auto max-w-5xl space-y-4">
+          <div className="h-10 w-48 animate-pulse rounded-xl bg-line/70" />
+          <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="h-72 animate-pulse rounded-xl border border-line bg-white shadow-soft" />
+            <div className="h-72 animate-pulse rounded-xl border border-line bg-white shadow-soft" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-mist">

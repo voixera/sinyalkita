@@ -3,6 +3,7 @@
 import { Copy, KeyRound, Plus, RefreshCw } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
+import { useAuth } from "@/components/auth-provider";
 import { Button, ErrorState, SkeletonBlock } from "@/components/ui";
 import { useToast } from "@/components/toast";
 import { api } from "@/lib/api";
@@ -27,14 +28,17 @@ export default function GenerateAccountPage() {
   const [generated, setGenerated] = useState<GeneratedCredentials | null>(null);
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { ready, user } = useAuth();
   const { showToast } = useToast();
 
   useEffect(() => {
+    if (!ready || user?.role !== "ADMIN") return;
+
     api
       .adminPackages()
       .then((data) => setPackages(data.packages))
       .catch((err) => setError(err instanceof Error ? err.message : "Paket layanan belum dapat dimuat."));
-  }, []);
+  }, [ready, user?.role]);
 
   async function createCustomer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

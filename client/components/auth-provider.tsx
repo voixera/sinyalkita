@@ -9,6 +9,7 @@ type SessionUser = { name: string; loginId: string; role: Role };
 type AuthContextValue = {
   user: SessionUser | null;
   token: string | null;
+  ready: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 };
@@ -19,12 +20,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setToken(localStorage.getItem("sinyalkita_token"));
-    const storedUser = localStorage.getItem("sinyalkita_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      setToken(localStorage.getItem("sinyalkita_token"));
+      const storedUser = localStorage.getItem("sinyalkita_user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } finally {
+      setReady(true);
     }
   }, []);
 
@@ -32,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       token,
+      ready,
       login: async (email: string, password: string) => {
         const data = await api.login(email, password);
         localStorage.setItem("sinyalkita_token", data.token);
@@ -48,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/login");
       }
     }),
-    [router, token, user]
+    [ready, router, token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
