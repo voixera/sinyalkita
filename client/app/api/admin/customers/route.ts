@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(payload.password, 10);
     const amount = payload.monthlyAmount || selectedPackage.monthlyPrice;
     const now = new Date();
-    const period = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const firstBilling = getFirstBillingSchedule(now);
+    const period = firstBilling.period;
     const month = String(period.getUTCMonth() + 1).padStart(2, "0");
     const year = period.getUTCFullYear();
 
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
               invoiceNo: `INV/SKT/${year}/${month}/${identity.uniqueNumber}`,
               period,
               amount,
-              dueDate: new Date(Date.UTC(year, period.getUTCMonth(), 20)),
+              dueDate: firstBilling.dueDate,
               status: "UNPAID"
             }
           }
@@ -105,6 +106,13 @@ function slugifyName(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "")
     .slice(0, 18);
+}
+
+function getFirstBillingSchedule(startedAt: Date) {
+  return {
+    period: new Date(Date.UTC(startedAt.getUTCFullYear(), startedAt.getUTCMonth() + 1, 1)),
+    dueDate: new Date(Date.UTC(startedAt.getUTCFullYear(), startedAt.getUTCMonth() + 1, startedAt.getUTCDate()))
+  };
 }
 
 async function createUniqueIdentity(name: string, baseNumber: number) {

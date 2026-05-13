@@ -99,7 +99,8 @@ export default function GenerateAccountPage() {
               <div>
                 <h2 className="font-heading text-xl font-bold text-ink">Data akun pelanggan</h2>
                 <p className="mt-1 text-sm font-semibold text-ink-soft">
-                  ID login dibuat otomatis dari nama pelanggan dan nomor unik. Setiap akun punya data tagihan sendiri.
+                  ID login dibuat otomatis dari nama pelanggan dan nomor unik. Pelanggan baru diberi masa aktif 1 bulan
+                  sebelum tagihan pertama jatuh tempo.
                 </p>
               </div>
             </div>
@@ -131,6 +132,9 @@ export default function GenerateAccountPage() {
                 <p className="text-sm font-bold text-ink">Paket layanan</p>
                 <p className="mt-1 font-semibold text-ink-soft">
                   {packages[0]?.name || "WiFi Bulanan"} - {formatCurrency(packages[0]?.monthlyPrice || 65000)}
+                </p>
+                <p className="mt-2 text-xs font-semibold leading-5 text-ink-soft">
+                  Tagihan pertama dibuat untuk periode bulan depan dan tidak langsung ditagihkan saat akun dibuat.
                 </p>
                 <input type="hidden" name="packageId" value={packages[0]?.id || "pkg_wifi_bulanan_65"} />
                 <input type="hidden" name="monthlyAmount" value={packages[0]?.monthlyPrice || 65000} />
