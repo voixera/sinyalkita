@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Manrope, Sora } from "next/font/google";
 import "@/styles/globals.css";
+import "@/styles/mobilestyles.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { ToastProvider } from "@/components/toast";
 

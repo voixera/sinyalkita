@@ -113,28 +113,29 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
             <LogOut className="h-5 w-5" />
           </button>
         </div>
-        <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {nav.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={clsx(
-                  "flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold",
-                  active ? "bg-ink text-white" : "bg-mist text-ink-soft"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
       </header>
 
-      <main className="px-4 py-6 lg:ml-72 lg:px-10 lg:py-9">{children}</main>
+      <nav className="mobile-bottom-nav lg:hidden">
+        {nav.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={clsx(
+                "mobile-bottom-nav-item mobile-tap flex flex-col items-center justify-center gap-1 font-bold",
+                active ? "bg-ink text-white shadow-soft" : "text-ink-soft"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <main className="mobile-bottom-safe px-4 py-6 lg:ml-72 lg:px-10 lg:py-9">{children}</main>
     </div>
   );
 }

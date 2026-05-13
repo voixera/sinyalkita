@@ -1,0 +1,129 @@
+.mobile-container {
+    width: 100%;
+}
+
+.mobile-stack {
+}
+
+.mobile-card {
+    border: 1px solid rgba(216, 224, 232, 0.86);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 44px rgba(11, 22, 40, 0.08);
+}
+
+.mobile-priority-card {
+    background: #0b1628;
+    color: #ffffff;
+    box-shadow: 0 18px 46px rgba(11, 22, 40, 0.18);
+}
+
+.mobile-button {
+    min-height: 44px;
+    width: 100%;
+    touch-action: manipulation;
+}
+
+.mobile-list {
+}
+
+.mobile-list-row {
+}
+
+.mobile-bottom-safe {
+    padding-bottom: 6.5rem;
+}
+
+.mobile-sticky-action {
+    position: sticky;
+    bottom: 5.75rem;
+    z-index: 8;
+}
+
+@media (max-width: 767px) {
+    body {
+      background:
+        radial-gradient(circle at 18% 0%, rgba(47, 154, 109, 0.09), transparent 18rem),
+        linear-gradient(180deg, #f7f9fc 0%, #eef3f8 100%);
+      font-size: 16px;
+    }
+
+    .mobile-container {
+      padding-inline: 0.25rem;
+    }
+
+    .mobile-stack {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .mobile-page-title {
+      font-size: 1.55rem;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .mobile-card {
+      border-radius: 1rem;
+      padding: 1.125rem;
+    }
+
+    .mobile-priority-card {
+      border-radius: 1.125rem;
+      padding: 1.25rem;
+    }
+
+    .mobile-list {
+      display: grid;
+      gap: 0.875rem;
+    }
+
+    .mobile-list-row {
+      border-bottom: 1px solid rgba(216, 224, 232, 0.82);
+      padding-block: 1rem;
+    }
+
+    .mobile-tap {
+      transform: translateZ(0);
+    }
+
+    .mobile-tap:active {
+      opacity: 0.82;
+      transform: scale(0.985);
+    }
+
+    .mobile-bottom-nav {
+      position: fixed;
+      inset-inline: 0.875rem;
+      bottom: 0.875rem;
+      z-index: 30;
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 0.375rem;
+      border: 1px solid rgba(216, 224, 232, 0.86);
+      border-radius: 1.25rem;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 0.5rem;
+      box-shadow: 0 18px 50px rgba(11, 22, 40, 0.14);
+      backdrop-filter: blur(18px);
+    }
+
+    .mobile-bottom-nav-item {
+      min-height: 3.25rem;
+      border-radius: 0.95rem;
+      padding: 0.5rem 0.25rem;
+      font-size: 0.7rem;
+      line-height: 1.1;
+      touch-action: manipulation;
+    }
+
+    .mobile-bottom-nav-item:active {
+      transform: scale(0.96);
+    }
+}
+
+@media (min-width: 768px) {
+    .mobile-bottom-nav {
+      display: none;
+    }
+}

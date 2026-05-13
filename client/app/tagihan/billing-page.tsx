@@ -25,7 +25,7 @@ export default function BillingsPage() {
     <AppShell>
       <div className="mb-6">
         <p className="text-sm font-bold text-ink-soft">Ringkasan pembayaran</p>
-        <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Tagihan</h1>
+        <h1 className="mobile-page-title mt-2 font-heading text-3xl font-bold text-ink">Tagihan</h1>
       </div>
 
       {error ? (
@@ -33,8 +33,8 @@ export default function BillingsPage() {
       ) : !billings || !current ? (
         <SkeletonBlock className="h-96" />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-          <section className="rounded-xl bg-white p-6 shadow-soft">
+        <div className="mobile-container mobile-stack xl:grid xl:grid-cols-[0.8fr_1.2fr] xl:gap-5">
+          <section className="mobile-card rounded-xl bg-white p-6 shadow-soft">
             <div className="flex items-center justify-between">
               <div className="grid h-12 w-12 place-items-center rounded-xl bg-warning-soft text-warning">
                 <ReceiptText className="h-5 w-5" />
@@ -52,29 +52,34 @@ export default function BillingsPage() {
                 </div>
               </div>
             </div>
-            <LinkButton href="/pembayaran" className="mt-6 w-full">
+            <LinkButton href="/pembayaran" className="mobile-button mobile-tap mobile-sticky-action mt-6 w-full xl:static">
               <CreditCard className="h-4 w-4" />
               Bayar tagihan
             </LinkButton>
           </section>
 
-          <section className="glass-panel rounded-xl p-5">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-line pb-3 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+          <section className="glass-panel mobile-card rounded-xl p-5">
+            <div className="hidden grid-cols-[1fr_auto_auto] gap-3 border-b border-line pb-3 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft sm:grid">
               <span>Invoice</span>
               <span>Status</span>
               <span className="text-right">Nominal</span>
             </div>
-            <div className="divide-y divide-line/80">
+            <div className="mobile-list sm:divide-y sm:divide-line/80">
               {billings.map((billing) => (
-                <div key={billing.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-4">
+                <div
+                  key={billing.id}
+                  className="mobile-list-row grid gap-3 rounded-xl border border-line/70 bg-white p-4 sm:grid-cols-[1fr_auto_auto] sm:items-center sm:border-0 sm:bg-transparent sm:p-0 sm:py-4"
+                >
                   <div>
                     <p className="mono text-sm font-bold text-ink">{billing.invoiceNo}</p>
                     <p className="mt-1 text-sm text-ink-soft">
                       {shortMonth(billing.period)} - tempo {formatDate(billing.dueDate)}
                     </p>
                   </div>
-                  <StatusBadge status={billing.status} />
-                  <p className="mono text-right font-bold text-ink">{formatCurrency(billing.amount)}</p>
+                  <div className="flex items-center justify-between gap-3 sm:contents">
+                    <StatusBadge status={billing.status} />
+                    <p className="mono text-right text-lg font-bold text-ink sm:text-base">{formatCurrency(billing.amount)}</p>
+                  </div>
                 </div>
               ))}
             </div>

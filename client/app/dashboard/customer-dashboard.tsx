@@ -45,17 +45,17 @@ export default function DashboardPage() {
       {error ? (
         <ErrorState title="Dashboard belum dapat dimuat" message={error} />
       ) : !data ? (
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="mobile-stack lg:grid lg:grid-cols-3 lg:gap-5">
           <SkeletonBlock className="h-48 lg:col-span-2" />
           <SkeletonBlock className="h-48" />
           <SkeletonBlock className="h-40 lg:col-span-3" />
         </div>
       ) : (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mobile-container mobile-stack lg:space-y-6">
           <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
               <p className="text-sm font-bold text-ink-soft">ID pelanggan {data.user.customerId}</p>
-              <h1 className="mt-2 font-heading text-3xl font-bold text-ink lg:text-4xl">
+              <h1 className="mobile-page-title mt-2 font-heading text-3xl font-bold text-ink lg:text-4xl">
                 Selamat datang kembali, {data.user.name.split(" ")[0]}
               </h1>
             </div>
@@ -63,7 +63,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-            <section className="glass-panel rounded-xl p-5">
+            <section className="mobile-card order-2 rounded-xl p-5 xl:order-1">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold text-ink-soft">Paket aktif</p>
@@ -80,7 +80,7 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            <section className="rounded-xl bg-ink p-5 text-white shadow-lift">
+            <section className="mobile-priority-card order-1 rounded-xl bg-ink p-5 text-white shadow-lift xl:order-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-white/60">Tagihan bulan ini</p>
                 <ReceiptText className="h-5 w-5 text-white/60" />
@@ -90,19 +90,19 @@ export default function DashboardPage() {
                 <span className="text-sm text-white/60">Jatuh tempo</span>
                 <span className="font-bold">{formatDate(data.currentBilling.dueDate)}</span>
               </div>
-              <LinkButton href="/pembayaran" className="mt-6 w-full bg-white text-ink hover:bg-success-soft">
+              <LinkButton href="/pembayaran" className="mobile-button mobile-tap mobile-sticky-action mt-6 w-full bg-white text-ink hover:bg-success-soft lg:static">
                 Bayar sekarang
               </LinkButton>
             </section>
           </div>
 
-          <section className="grid gap-5 lg:grid-cols-3">
+          <section className="mobile-stack lg:grid lg:grid-cols-3 lg:gap-5">
             <MiniCard title="Alamat layanan" value={data.user.address} />
             <MiniCard title="Kontak terdaftar" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
             <MiniCard title="Catatan" value="Layanan ini hanya untuk pelanggan aktif. Pendaftaran publik tidak tersedia." />
           </section>
 
-          <section className="rounded-xl border border-line bg-white p-5 shadow-soft">
+          <section className="mobile-card rounded-xl border border-line bg-white p-5 shadow-soft">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
                 <div className={`grid h-11 w-11 place-items-center rounded-xl ${openReport ? "bg-warning-soft text-warning" : "bg-success-soft text-success"}`}>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
                   className="mt-2 w-full resize-none rounded-xl border-line bg-mist/60 px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
                 />
               </label>
-              <Button type="button" disabled={Boolean(openReport) || reporting} onClick={reportProblem}>
+              <Button type="button" className="mobile-button mobile-tap" disabled={Boolean(openReport) || reporting} onClick={reportProblem}>
                 <Send className="h-4 w-4" />
                 {openReport ? "Sudah dilaporkan" : reporting ? "Mengirim..." : "Report problem"}
               </Button>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
 
 function Info({ icon: Icon, label, value }: { icon: typeof Gauge; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line/80 bg-white p-4">
+    <div className="mobile-card rounded-xl border border-line/80 bg-white p-4">
       <Icon className="h-5 w-5 text-ocean" />
       <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-ink-soft">{label}</p>
       <p className="mt-1 font-bold text-ink">{value}</p>
@@ -157,7 +157,7 @@ function Info({ icon: Icon, label, value }: { icon: typeof Gauge; label: string;
 
 function MiniCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="rounded-xl border border-line/80 bg-white p-5 shadow-soft">
+    <div className="mobile-card rounded-xl border border-line/80 bg-white p-5 shadow-soft">
       <p className="text-sm font-bold text-ink-soft">{title}</p>
       <p className="mt-2 font-semibold leading-7 text-ink">{value}</p>
     </div>
