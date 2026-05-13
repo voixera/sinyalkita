@@ -139,14 +139,16 @@ export function SupportChat() {
         ) : null}
       </AnimatePresence>
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-24 right-5 z-40 grid h-16 w-16 place-items-center rounded-full bg-[#2446B8] text-white shadow-lift hover:-translate-y-0.5 hover:bg-ocean lg:bottom-6 lg:right-6"
-        aria-label="Buka online support"
-      >
-        {open ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
-      </button>
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="fixed bottom-24 right-5 z-40 grid h-16 w-16 place-items-center rounded-full bg-[#2446B8] text-white shadow-lift hover:-translate-y-0.5 hover:bg-ocean lg:bottom-6 lg:right-6"
+          aria-label="Buka online support"
+        >
+          <MessageCircle className="h-7 w-7" />
+        </button>
+      ) : null}
     </>
   );
 }
