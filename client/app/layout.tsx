@@ -3,6 +3,7 @@ import { JetBrains_Mono, Manrope, Sora } from "next/font/google";
 import "@/styles/globals.css";
 import "@/styles/mobilestyles.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { SupportChat } from "@/components/support-chat";
 import { ToastProvider } from "@/components/toast";
 
 const sora = Sora({
@@ -38,7 +39,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="id">
       <body className={`${sora.variable} ${manrope.variable} ${mono.variable}`}>
         <ToastProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <SupportChat />
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>
