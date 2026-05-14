@@ -43,6 +43,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
   const { logout, ready, token, user } = useAuth();
   const [adminBadges, setAdminBadges] = useState({ pendingPayments: 0, openReports: 0 });
   const nav = admin ? adminNav : customerNav;
+  const brandSubtitle = user?.role === "ADMIN" ? "Admin Control Panel" : "Web resmi user";
   const blocked =
     !ready || !token || !user || (admin && user.role !== "ADMIN") || (!admin && user.role === "ADMIN");
 
@@ -103,7 +104,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
           </span>
           <span>
             <span className="block font-heading text-lg font-bold text-ink">SinyalKita</span>
-            <span className="block text-xs font-semibold text-ink-soft">Web resmi user</span>
+            <span className="block text-xs font-semibold text-ink-soft">{brandSubtitle}</span>
           </span>
         </Link>
 
