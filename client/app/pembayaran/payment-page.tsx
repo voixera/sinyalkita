@@ -306,7 +306,7 @@ function PaymentInstruction({
                 event.currentTarget.style.display = "none";
               }}
             />
-            <span className="absolute inset-4 grid place-items-center text-center text-xs font-bold text-ink-soft">
+            <span className="absolute inset-4 hidden place-items-center text-center text-xs font-bold text-ink-soft sm:grid">
               Letakkan gambar QRIS di public/payments/qris/qris.jpg
             </span>
           </div>
@@ -389,7 +389,7 @@ function QrisModal({ onClose }: { onClose: () => void }) {
               event.currentTarget.style.display = "none";
             }}
           />
-          <span className="absolute inset-4 grid place-items-center text-center text-xs font-bold text-ink-soft">
+          <span className="hidden">
             Letakkan gambar QRIS di public/payments/qris/qris.jpg
           </span>
         </div>
