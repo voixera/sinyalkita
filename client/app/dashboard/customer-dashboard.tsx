@@ -1,21 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertTriangle, CalendarDays, Gauge, ReceiptText, Router, Send, Signal } from "lucide-react";
+import { CalendarDays, Gauge, Router, Signal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { Button, ErrorState, LinkButton, SkeletonBlock, StatusBadge } from "@/components/ui";
-import { useToast } from "@/components/toast";
+import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import type { MeResponse } from "@/lib/types";
 
 export default function DashboardPage() {
   const [data, setData] = useState<MeResponse | null>(null);
   const [error, setError] = useState("");
-  const [reportMessage, setReportMessage] = useState("WiFi sedang error atau tidak bisa digunakan.");
-  const [reporting, setReporting] = useState(false);
-  const { showToast } = useToast();
 
   useEffect(() => {
     api
@@ -23,22 +19,6 @@ export default function DashboardPage() {
       .then(setData)
       .catch((err) => setError(err instanceof Error ? err.message : "Data dashboard belum dapat dimuat."));
   }, []);
-
-  async function reportProblem() {
-    if (!data) return;
-    setReporting(true);
-    try {
-      const result = await api.createReport(reportMessage);
-      setData({ ...data, reports: [result.report, ...data.reports] });
-      showToast({ title: "Laporan gangguan dikirim ke admin.", tone: "success" });
-    } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Laporan belum dapat dikirim.", tone: "info" });
-    } finally {
-      setReporting(false);
-    }
-  }
-
-  const openReport = data?.reports.find((report) => report.status === "OPEN");
 
   return (
     <AppShell>
@@ -62,8 +42,8 @@ export default function DashboardPage() {
             <StatusBadge status={data.subscription.status} />
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-            <section className="mobile-card order-2 rounded-xl p-5 xl:order-1">
+          <div className="grid gap-5">
+            <section className="mobile-card rounded-xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold text-ink-soft">Paket aktif</p>
@@ -79,65 +59,12 @@ export default function DashboardPage() {
                 <Info icon={Signal} label="Status" value="Normal" />
               </div>
             </section>
-
-            <section className="mobile-priority-card order-1 rounded-xl bg-ink p-5 text-white shadow-lift xl:order-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-white/60">Tagihan bulan ini</p>
-                <ReceiptText className="h-5 w-5 text-white/60" />
-              </div>
-              <p className="mono mt-5 text-4xl font-bold">{formatCurrency(data.currentBilling.amount)}</p>
-              <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="text-sm text-white/60">Jatuh tempo</span>
-                <span className="font-bold">{formatDate(data.currentBilling.dueDate)}</span>
-              </div>
-              <LinkButton href="/pembayaran" className="mobile-button mobile-tap mobile-sticky-action mt-6 w-full bg-white text-ink hover:bg-success-soft lg:static">
-                Bayar sekarang
-              </LinkButton>
-            </section>
           </div>
 
           <section className="mobile-stack lg:grid lg:grid-cols-3 lg:gap-5">
             <MiniCard title="Server layanan" value={data.user.serverName} />
             <MiniCard title="Alamat layanan" value={data.user.address} />
             <MiniCard title="Kontak terdaftar" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
-          </section>
-
-          <section className="mobile-card rounded-xl border border-line bg-white p-5 shadow-soft">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex items-start gap-3">
-                <div className={`grid h-11 w-11 place-items-center rounded-xl ${openReport ? "bg-warning-soft text-warning" : "bg-success-soft text-success"}`}>
-                  {openReport ? <AlertTriangle className="h-5 w-5" /> : <Signal className="h-5 w-5" />}
-                </div>
-                <div>
-                  <p className="font-heading text-xl font-bold text-ink">
-                    {openReport ? "Laporan gangguan sedang ditangani" : "Koneksi WiFi aman"}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold leading-6 text-ink-soft">
-                    {openReport
-                      ? "Admin sudah menerima laporan kamu dan akan melakukan pengecekan."
-                      : "Jika WiFi error atau trouble, kirim report agar admin langsung melihatnya."}
-                  </p>
-                </div>
-              </div>
-              <StatusBadge status={openReport ? "PENDING" : "ACTIVE"} />
-            </div>
-
-            <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
-              <label className="block text-sm font-bold text-ink">
-                Detail gangguan
-                <textarea
-                  value={reportMessage}
-                  onChange={(event) => setReportMessage(event.target.value)}
-                  disabled={Boolean(openReport)}
-                  rows={3}
-                  className="mt-2 w-full resize-none rounded-xl border-line bg-mist/60 px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-                />
-              </label>
-              <Button type="button" className="mobile-button mobile-tap" disabled={Boolean(openReport) || reporting} onClick={reportProblem}>
-                <Send className="h-4 w-4" />
-                {openReport ? "Sudah dilaporkan" : reporting ? "Mengirim..." : "Report problem"}
-              </Button>
-            </div>
           </section>
         </motion.div>
       )}

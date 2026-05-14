@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 
 const customerNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/report-problem", label: "Report", icon: AlertTriangle },
   { href: "/tagihan", label: "Tagihan", icon: ReceiptText },
   { href: "/pembayaran", label: "Pembayaran", icon: CreditCard },
   { href: "/riwayat", label: "Riwayat", icon: FileClock }
