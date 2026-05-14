@@ -204,12 +204,18 @@ export default function PaymentPage() {
               })}
             </div>
             <PaymentInstruction method={method} totalAmount={totalAmount} onCopy={copyPaymentValue} onOpenQris={() => setQrisOpen(true)} />
-            <div className="mt-4 rounded-xl border border-line bg-white p-4">
+            <div className="mt-4 rounded-xl border border-line bg-white p-3 sm:p-4">
               <p className="text-sm font-bold text-ink">Upload bukti transfer</p>
-              <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-ocean/30 bg-mist/60 px-4 py-6 text-center hover:bg-white">
-                <Upload className="h-5 w-5 text-ocean" />
-                <span className="mt-2 text-sm font-bold text-ink">{proof ? proof.name : "Pilih gambar bukti pembayaran"}</span>
-                <span className="mt-1 text-xs font-semibold text-ink-soft">JPG, PNG, atau WEBP maksimal 2 MB</span>
+              <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-ocean/45 bg-ocean/5 px-4 py-7 text-center shadow-inner hover:bg-white sm:border sm:border-ocean/30 sm:bg-mist/60 sm:py-6">
+                <span className="grid h-14 w-14 place-items-center rounded-full bg-ocean text-white shadow-soft sm:h-auto sm:w-auto sm:bg-transparent sm:text-ocean sm:shadow-none">
+                  <Upload className="h-7 w-7 sm:h-5 sm:w-5" />
+                </span>
+                <span className="mt-3 rounded-full bg-ink px-4 py-2 text-sm font-bold text-white sm:mt-2 sm:bg-transparent sm:px-0 sm:py-0 sm:text-ink">
+                  {proof ? proof.name : "Ketuk untuk pilih bukti"}
+                </span>
+                <span className="mt-2 text-xs font-bold text-ocean sm:mt-1 sm:font-semibold sm:text-ink-soft">
+                  JPG, PNG, atau WEBP maksimal 2 MB
+                </span>
                 <input type="file" accept="image/*" className="hidden" onChange={(event) => uploadProof(event.target.files?.[0] || null)} />
               </label>
             </div>
