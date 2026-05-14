@@ -33,7 +33,7 @@ const adminNav = [
   { href: "/admin/servers", label: "Server", icon: Server },
   { href: "/admin/payments", label: "Verifikasi", icon: CreditCard, badge: "pendingPayments" },
   { href: "/admin/reports", label: "Report", icon: AlertTriangle, badge: "openReports" },
-  { href: "/admin/generate", label: "Generate Akun", icon: KeyRound },
+  { href: "/admin/generate", label: "Akun", icon: KeyRound },
   { href: "/admin/history", label: "History", icon: History }
 ];
 
