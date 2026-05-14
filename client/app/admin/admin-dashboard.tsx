@@ -1,13 +1,14 @@
 "use client";
 
-import { Activity, AlertTriangle, BarChart3, CreditCard, UsersRound, WalletCards } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, CreditCard, Server, UsersRound, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
-import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
+import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
+import type { ServerStatus, ServiceServer } from "@/lib/types";
 
 type Row = {
   customerId: string;
@@ -29,6 +30,7 @@ type Summary = {
 
 export default function AdminPage() {
   const [customers, setCustomers] = useState<Row[] | null>(null);
+  const [servers, setServers] = useState<ServiceServer[] | null>(null);
   const [summary, setSummary] = useState<Summary>({
     totalCustomers: 0,
     activeCustomers: 0,
@@ -37,12 +39,14 @@ export default function AdminPage() {
     openReports: 0
   });
   const [error, setError] = useState("");
+  const [updatingServer, setUpdatingServer] = useState("");
   const { ready, user } = useAuth();
 
   const loadOperationalData = useCallback(async () => {
     try {
-      const overview = await api.adminOverview();
+      const [overview, serverData] = await Promise.all([api.adminOverview(), api.adminServers()]);
       setCustomers(overview.customers);
+      setServers(serverData.servers);
       setSummary(overview.summary);
       setError("");
     } catch (err) {
@@ -58,6 +62,19 @@ export default function AdminPage() {
   const activeRate = summary.totalCustomers ? Math.round((summary.activeCustomers / summary.totalCustomers) * 100) : 0;
   const unpaidRate = summary.totalCustomers ? Math.round((summary.unpaidBillings / summary.totalCustomers) * 100) : 0;
   const totalMonthly = (customers || []).reduce((total, customer) => total + customer.amount, 0);
+  const serverIssues = (servers || []).filter((server) => server.status !== "ACTIVE").length;
+
+  async function updateServerStatus(name: string, status: ServerStatus) {
+    setUpdatingServer(name);
+    try {
+      const result = await api.updateServer({ name, status });
+      setServers((current) =>
+        (current || []).map((server) => (server.name === result.server.name ? result.server : server))
+      );
+    } finally {
+      setUpdatingServer("");
+    }
+  }
 
   return (
     <AppShell admin>
@@ -70,16 +87,58 @@ export default function AdminPage() {
           <Metric icon={UsersRound} label="User aktif" value={String(summary.activeCustomers)} />
           <Metric icon={WalletCards} label="Perlu dicek" value={String(summary.pendingPayments)} />
           <Metric icon={AlertTriangle} label="Report gangguan" value={String(summary.openReports)} />
+          <Metric icon={Server} label="Server bermasalah" value={String(serverIssues)} />
           <Metric icon={Activity} label="Tagihan menunggu" value={String(summary.unpaidBillings)} />
         </div>
       </div>
 
       {error ? (
         <ErrorState title="Panel admin belum dapat dimuat" message={error} />
-      ) : !customers ? (
+      ) : !customers || !servers ? (
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5">
+          <section className="rounded-xl border border-line bg-white p-5 shadow-soft">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="font-heading text-xl font-bold text-ink">Status server layanan</p>
+                <p className="mt-1 text-sm font-semibold text-ink-soft">
+                  Ubah status server agar otomatis tersinkron ke dashboard user sesuai server layanan.
+                </p>
+              </div>
+              <div className="grid h-11 w-11 place-items-center rounded-xl bg-success-soft text-success">
+                <Server className="h-5 w-5" />
+              </div>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-3">
+              {servers.map((server) => (
+                <div key={server.id} className="rounded-xl border border-line bg-mist/60 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-ink">{server.name}</p>
+                      <p className="mt-1 text-xs font-bold text-ink-soft">Status saat ini</p>
+                    </div>
+                    <StatusBadge status={server.status} />
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {(["ACTIVE", "TROUBLE", "DOWN"] as ServerStatus[]).map((status) => (
+                      <Button
+                        key={status}
+                        type="button"
+                        variant={server.status === status ? "primary" : "ghost"}
+                        className="min-h-10 px-2 text-xs"
+                        disabled={updatingServer === server.name}
+                        onClick={() => updateServerStatus(server.name, status)}
+                      >
+                        {status === "ACTIVE" ? "Aktif" : status === "TROUBLE" ? "Gangguan" : "Error"}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-xl border border-line bg-white p-5 shadow-soft">
               <div className="flex items-center justify-between gap-4">
@@ -100,6 +159,11 @@ export default function AdminPage() {
                   value={Math.min(100, (summary.pendingPayments + summary.openReports) * 18)}
                   detail={`${summary.pendingPayments + summary.openReports} item`}
                   tone="danger"
+                />
+                <ProgressRow
+                  label="Server normal"
+                  value={servers.length ? Math.round(((servers.length - serverIssues) / servers.length) * 100) : 0}
+                  detail={`${servers.length - serverIssues}/${servers.length} server`}
                 />
               </div>
             </div>

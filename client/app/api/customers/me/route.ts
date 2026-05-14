@@ -48,6 +48,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "User tidak ditemukan." }, { status: 404 });
     }
 
+    const server = await prisma.serviceServer.findUnique({
+      where: { name: user.serverName }
+    });
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -60,6 +64,7 @@ export async function GET(req: NextRequest) {
         serverName: user.serverName,
         role: user.role
       },
+      server,
       subscription: user.subscription,
       currentBilling: user.billings[0],
       payments: user.payments,

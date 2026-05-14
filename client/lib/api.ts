@@ -1,4 +1,4 @@
-import type { Billing, MeResponse, Package, Payment, Role, TroubleReport } from "@/lib/types";
+import type { Billing, MeResponse, Package, Payment, Role, ServerStatus, ServiceServer, TroubleReport } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -97,6 +97,12 @@ export const api = {
       body: JSON.stringify({ action })
     }),
   adminPackages: () => request<{ packages: Array<Package & { id: string; description: string }> }>("/admin/packages"),
+  adminServers: () => request<{ servers: ServiceServer[] }>("/admin/servers"),
+  updateServer: (payload: { name: string; status: ServerStatus; note?: string }) =>
+    request<{ server: ServiceServer }>("/admin/servers", {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
   createCustomer: (payload: {
     name: string;
     password: string;

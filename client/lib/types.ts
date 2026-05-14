@@ -3,6 +3,7 @@ export type ServiceStatus = "ACTIVE" | "MAINTENANCE" | "SUSPENDED";
 export type BillingStatus = "UNPAID" | "PAID" | "OVERDUE";
 export type PaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
 export type ReportStatus = "OPEN" | "RESOLVED";
+export type ServerStatus = "ACTIVE" | "TROUBLE" | "DOWN";
 
 export type User = {
   id: string;
@@ -58,8 +59,17 @@ export type TroubleReport = {
   resolvedAt: string | null;
 };
 
+export type ServiceServer = {
+  id: string;
+  name: string;
+  status: ServerStatus;
+  note: string | null;
+  updatedAt: string;
+};
+
 export type MeResponse = {
   user: User;
+  server: ServiceServer | null;
   subscription: Subscription;
   currentBilling: Billing;
   payments: Payment[];

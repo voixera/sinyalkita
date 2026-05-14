@@ -7,6 +7,14 @@ async function main() {
   const passwordCustomer = await bcrypt.hash("pelanggan123", 10);
   const passwordAdmin = await bcrypt.hash("admin123", 10);
 
+  for (const name of ["Server Jombok", "Server Kepung", "Server Pare"]) {
+    await prisma.serviceServer.upsert({
+      where: { name },
+      update: {},
+      create: { name, status: "ACTIVE" }
+    });
+  }
+
   const paketWifi = await prisma.package.upsert({
     where: { id: "pkg_wifi_bulanan_65" },
     update: {

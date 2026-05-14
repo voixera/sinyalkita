@@ -20,6 +20,20 @@ export default function DashboardPage() {
       .catch((err) => setError(err instanceof Error ? err.message : "Data dashboard belum dapat dimuat."));
   }, []);
 
+  const serverStatus = data?.server?.status || "ACTIVE";
+  const serverStatusText =
+    serverStatus === "ACTIVE"
+      ? "WiFi aktif dan normal"
+      : serverStatus === "TROUBLE"
+        ? "WiFi sedang gangguan"
+        : "WiFi sedang error";
+  const serverStatusDescription =
+    serverStatus === "ACTIVE"
+      ? "Server layanan kamu berjalan normal."
+      : serverStatus === "TROUBLE"
+        ? "Server layanan kamu sedang mengalami gangguan. Tim admin sedang melakukan pengecekan."
+        : "Server layanan kamu sedang error. Silakan pantau informasi dari admin atau kirim report jika dibutuhkan.";
+
   return (
     <AppShell>
       {error ? (
@@ -56,10 +70,37 @@ export default function DashboardPage() {
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Info icon={Gauge} label="Kecepatan" value={`${data.subscription.package.speedMbps} Mbps`} />
                 <Info icon={CalendarDays} label="Aktif sejak" value={formatDate(data.subscription.startedAt)} />
-                <Info icon={Signal} label="Status" value="Normal" />
+                <Info icon={Signal} label="Status" value={serverStatusText} />
               </div>
             </section>
           </div>
+
+          <section
+            className={`mobile-card rounded-xl border p-5 shadow-soft ${
+              serverStatus === "ACTIVE"
+                ? "border-success/15 bg-success-soft"
+                : serverStatus === "TROUBLE"
+                  ? "border-warning/15 bg-warning-soft"
+                  : "border-danger/15 bg-danger-soft"
+            }`}
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`grid h-11 w-11 place-items-center rounded-xl bg-white ${
+                    serverStatus === "ACTIVE" ? "text-success" : serverStatus === "TROUBLE" ? "text-warning" : "text-danger"
+                  }`}
+                >
+                  <Signal className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-heading text-xl font-bold text-ink">{serverStatusText}</p>
+                  <p className="mt-1 text-sm font-semibold leading-6 text-ink-soft">{serverStatusDescription}</p>
+                </div>
+              </div>
+              <StatusBadge status={serverStatus} />
+            </div>
+          </section>
 
           <section className="mobile-stack lg:grid lg:grid-cols-3 lg:gap-5">
             <MiniCard title="Server layanan" value={data.user.serverName} />
