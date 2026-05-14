@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LockKeyhole } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
@@ -14,6 +14,7 @@ export default function LoginPage() {
   const { showToast } = useToast();
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -74,16 +75,26 @@ export default function LoginPage() {
           <label className="mt-5 block text-sm font-bold text-ink" htmlFor="password">
             Kata sandi
           </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
-            placeholder="Masukkan kata sandi"
-            autoComplete="current-password"
-            required
-          />
+          <div className="relative mt-2">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-xl border-line bg-white px-4 py-3 pr-12 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+              placeholder="Masukkan kata sandi"
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-ink-soft hover:bg-mist hover:text-ink"
+              aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
 
           {error ? (
             <div className="mt-4 rounded-xl border border-danger/15 bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">
