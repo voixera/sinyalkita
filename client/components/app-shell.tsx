@@ -9,7 +9,8 @@ import {
   KeyRound,
   LayoutDashboard,
   LogOut,
-  ReceiptText
+  ReceiptText,
+  Server
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -29,6 +30,7 @@ const customerNav = [
 
 const adminNav = [
   { href: "/admin", label: "Operasional", icon: BarChart3 },
+  { href: "/admin/servers", label: "Server", icon: Server },
   { href: "/admin/payments", label: "Verifikasi", icon: CreditCard, badge: "pendingPayments" },
   { href: "/admin/reports", label: "Report", icon: AlertTriangle, badge: "openReports" },
   { href: "/admin/generate", label: "Generate Akun", icon: KeyRound },

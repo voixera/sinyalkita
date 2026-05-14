@@ -96,9 +96,7 @@
       inset-inline: 0.875rem;
       bottom: 0.875rem;
       z-index: 30;
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 1fr;
+      display: flex;
       gap: 0.375rem;
       border: 1px solid rgba(216, 224, 232, 0.86);
       border-radius: 1.25rem;
@@ -106,9 +104,16 @@
       padding: 0.5rem;
       box-shadow: 0 18px 50px rgba(11, 22, 40, 0.14);
       backdrop-filter: blur(18px);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .mobile-bottom-nav::-webkit-scrollbar {
+      display: none;
     }
 
     .mobile-bottom-nav-item {
+      flex: 0 0 4.35rem;
       min-height: 3.25rem;
       border-radius: 0.95rem;
       padding: 0.5rem 0.25rem;

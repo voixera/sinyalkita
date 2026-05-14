@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
-import { Button, ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
+import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
-import type { ServerStatus, ServiceServer } from "@/lib/types";
+import type { ServiceServer } from "@/lib/types";
 
 type Row = {
   customerId: string;
@@ -39,7 +39,6 @@ export default function AdminPage() {
     openReports: 0
   });
   const [error, setError] = useState("");
-  const [updatingServer, setUpdatingServer] = useState("");
   const { ready, user } = useAuth();
 
   const loadOperationalData = useCallback(async () => {
@@ -64,18 +63,6 @@ export default function AdminPage() {
   const totalMonthly = (customers || []).reduce((total, customer) => total + customer.amount, 0);
   const serverIssues = (servers || []).filter((server) => server.status !== "ACTIVE").length;
 
-  async function updateServerStatus(name: string, status: ServerStatus) {
-    setUpdatingServer(name);
-    try {
-      const result = await api.updateServer({ name, status });
-      setServers((current) =>
-        (current || []).map((server) => (server.name === result.server.name ? result.server : server))
-      );
-    } finally {
-      setUpdatingServer("");
-    }
-  }
-
   return (
     <AppShell admin>
       <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
@@ -98,47 +85,6 @@ export default function AdminPage() {
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5">
-          <section className="rounded-xl border border-line bg-white p-5 shadow-soft">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-heading text-xl font-bold text-ink">Status server layanan</p>
-                <p className="mt-1 text-sm font-semibold text-ink-soft">
-                  Ubah status server agar otomatis tersinkron ke dashboard user sesuai server layanan.
-                </p>
-              </div>
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-success-soft text-success">
-                <Server className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="grid gap-3 lg:grid-cols-3">
-              {servers.map((server) => (
-                <div key={server.id} className="rounded-xl border border-line bg-mist/60 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-ink">{server.name}</p>
-                      <p className="mt-1 text-xs font-bold text-ink-soft">Status saat ini</p>
-                    </div>
-                    <StatusBadge status={server.status} />
-                  </div>
-                  <div className="mt-4 grid grid-cols-3 gap-2">
-                    {(["ACTIVE", "TROUBLE", "DOWN"] as ServerStatus[]).map((status) => (
-                      <Button
-                        key={status}
-                        type="button"
-                        variant={server.status === status ? "primary" : "ghost"}
-                        className="min-h-10 px-2 text-xs"
-                        disabled={updatingServer === server.name}
-                        onClick={() => updateServerStatus(server.name, status)}
-                      >
-                        {status === "ACTIVE" ? "Aktif" : status === "TROUBLE" ? "Gangguan" : "Error"}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
           <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
             <div className="rounded-xl border border-line bg-white p-5 shadow-soft">
               <div className="flex items-center justify-between gap-4">
@@ -179,18 +125,18 @@ export default function AdminPage() {
           </section>
 
           <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
-            <div className="grid grid-cols-[1.1fr_0.9fr_1fr_auto_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">
+            <div className="hidden grid-cols-[1.1fr_0.9fr_1fr_auto_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft md:grid">
               <span>User</span>
               <span>Login</span>
               <span>Paket</span>
               <span>Status</span>
               <span className="text-right">Nominal</span>
             </div>
-            <div className="divide-y divide-line/80">
+            <div className="grid gap-3 p-3 md:block md:divide-y md:divide-line/80 md:p-0">
               {customers.map((row) => (
                 <div
                   key={row.customerId}
-                  className="grid grid-cols-1 gap-3 px-5 py-4 hover:bg-mist/55 md:grid-cols-[1.1fr_0.9fr_1fr_auto_auto] md:items-center md:gap-4"
+                  className="rounded-xl border border-line bg-white p-4 shadow-soft md:grid md:grid-cols-[1.1fr_0.9fr_1fr_auto_auto] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-4 md:shadow-none md:hover:bg-mist/55"
                 >
                   <div>
                     <p className="font-bold text-ink">{row.name}</p>
