@@ -61,6 +61,18 @@ export const api = {
         pendingPayments: number;
         openReports: number;
       };
+      operational: {
+        rangeLabel: string;
+        methods: string[];
+        points: Array<{
+          date: string;
+          label: string;
+          revenue: number;
+          pending: number;
+          reports: number;
+          paymentsByMethod: Record<string, number>;
+        }>;
+      };
     }>("/admin/overview"),
   adminPendingPayments: () =>
     request<{
