@@ -30,7 +30,7 @@ const paymentDetails: Record<string, { label: string; value: string; note: strin
     note: "a.n Audrey Faisal Riza, Transfer sesuai nominal tagihan lalu kirim pembayaran untuk di cek admin."
   },
   "DANA": {
-    label: "Konfirmasi admin",
+    label: "No. DANA",
     value: "085179657739",
     note: "a.n Audrey Faisal Riza, Transfer sesuai nominal tagihan lalu kirim pembayaran untuk di cek admin."
   }
