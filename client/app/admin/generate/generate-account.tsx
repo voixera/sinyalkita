@@ -22,8 +22,15 @@ type GeneratedCredentials = {
   password: string;
 };
 
+const serverPrices: Record<string, number> = {
+  "Server Jombok": 65000,
+  "Server Kepung": 100000,
+  "Server Pare": 65000
+};
+
 export default function GenerateAccountPage() {
   const [packages, setPackages] = useState<PackageOption[] | null>(null);
+  const [serverName, setServerName] = useState("Server Jombok");
   const [error, setError] = useState("");
   const [generated, setGenerated] = useState<GeneratedCredentials | null>(null);
   const [password, setPassword] = useState("");
@@ -53,8 +60,7 @@ export default function GenerateAccountPage() {
       address: String(form.get("address") || ""),
       serverName: String(form.get("serverName") || "Server Jombok"),
       packageId: String(form.get("packageId") || ""),
-      email: String(form.get("email") || ""),
-      monthlyAmount: Number(form.get("monthlyAmount") || 0) || undefined
+      email: String(form.get("email") || "")
     };
 
     try {
@@ -65,6 +71,7 @@ export default function GenerateAccountPage() {
       setGenerated(result.credentials);
       event.currentTarget.reset();
       setPassword("");
+      setServerName("Server Jombok");
       showToast({ title: `Akun ${result.credentials.loginId} berhasil dibuat.`, tone: "success" });
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Akun user belum dapat dibuat.", tone: "info" });
@@ -142,7 +149,8 @@ export default function GenerateAccountPage() {
                   name="serverName"
                   required
                   className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
-                  defaultValue="Server Jombok"
+                  value={serverName}
+                  onChange={(event) => setServerName(event.target.value)}
                 >
                   <option value="Server Jombok">Server Jombok</option>
                   <option value="Server Kepung">Server Kepung</option>
@@ -152,13 +160,13 @@ export default function GenerateAccountPage() {
               <div className="rounded-xl border border-line bg-mist/70 p-4">
                 <p className="text-sm font-bold text-ink">Paket layanan</p>
                 <p className="mt-1 font-semibold text-ink-soft">
-                  {packages[0]?.name || "WiFi Bulanan"} - {formatCurrency(packages[0]?.monthlyPrice || 65000)}
+                  {packages[0]?.name || "WiFi Bulanan"} {packages[0]?.speedMbps || 10} Mbps - {formatCurrency(serverPrices[serverName] || 65000)}
                 </p>
+                <p className="mt-1 text-xs font-bold text-ink-soft">Kepung 100rb/bulan, Pare dan Jombok 65rb/bulan.</p>
                 <p className="mt-2 text-xs font-semibold leading-5 text-ink-soft">
                   Tagihan pertama dibuat untuk periode bulan depan dan tidak langsung ditagihkan saat akun dibuat.
                 </p>
                 <input type="hidden" name="packageId" value={packages[0]?.id || "pkg_wifi_bulanan_65"} />
-                <input type="hidden" name="monthlyAmount" value={packages[0]?.monthlyPrice || 65000} />
               </div>
               <label className="block text-sm font-bold text-ink">
                 Alamat layanan

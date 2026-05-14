@@ -19,14 +19,14 @@ async function main() {
     where: { id: "pkg_wifi_bulanan_65" },
     update: {
       name: "WiFi Bulanan",
-      speedMbps: 20,
+      speedMbps: 10,
       monthlyPrice: 65000,
       description: "Paket pelanggan aktif SinyalKita."
     },
     create: {
       id: "pkg_wifi_bulanan_65",
       name: "WiFi Bulanan",
-      speedMbps: 20,
+      speedMbps: 10,
       monthlyPrice: 65000,
       description: "Paket pelanggan aktif SinyalKita."
     }

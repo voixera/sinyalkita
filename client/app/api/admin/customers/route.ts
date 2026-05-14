@@ -13,9 +13,14 @@ const createCustomerSchema = z.object({
   address: z.string().min(8),
   serverName: z.enum(["Server Jombok", "Server Kepung", "Server Pare"]).default("Server Jombok"),
   packageId: z.string().optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  monthlyAmount: z.coerce.number().int().positive().optional()
+  email: z.string().email().optional().or(z.literal(""))
 });
+
+const serverPrices: Record<string, number> = {
+  "Server Jombok": 65000,
+  "Server Kepung": 100000,
+  "Server Pare": 65000
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,7 +37,7 @@ export async function POST(req: NextRequest) {
     const baseNumber = await prisma.user.count({ where: { role: "CUSTOMER" } });
     const identity = await createUniqueIdentity(payload.name, baseNumber);
     const passwordHash = await bcrypt.hash(payload.password, 10);
-    const amount = payload.monthlyAmount || selectedPackage.monthlyPrice;
+    const amount = serverPrices[payload.serverName] || selectedPackage.monthlyPrice;
     const now = new Date();
     const firstBilling = getFirstBillingSchedule(now);
     const period = firstBilling.period;
