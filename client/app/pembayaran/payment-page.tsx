@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Building2, CheckCircle2, Copy, Landmark, QrCode, ShieldCheck, Upload, WalletCards } from "lucide-react";
+import { Building2, CheckCircle2, Copy, Landmark, QrCode, ShieldCheck, Upload, WalletCards, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -45,6 +45,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [proof, setProof] = useState<{ image: string; name: string } | null>(null);
+  const [qrisOpen, setQrisOpen] = useState(false);
   const { showToast } = useToast();
   const selectedMethod = methods.find((item) => item.id === method) || methods[0];
   const payableBillings = (billings || []).filter((billing) => billing.status !== "PAID");
@@ -202,7 +203,7 @@ export default function PaymentPage() {
                 );
               })}
             </div>
-            <PaymentInstruction method={method} totalAmount={totalAmount} onCopy={copyPaymentValue} />
+            <PaymentInstruction method={method} totalAmount={totalAmount} onCopy={copyPaymentValue} onOpenQris={() => setQrisOpen(true)} />
             <div className="mt-4 rounded-xl border border-line bg-white p-4">
               <p className="text-sm font-bold text-ink">Upload bukti transfer</p>
               <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-ocean/30 bg-mist/60 px-4 py-6 text-center hover:bg-white">
@@ -259,6 +260,8 @@ export default function PaymentPage() {
           </section>
         </div>
       )}
+
+      {qrisOpen ? <QrisModal onClose={() => setQrisOpen(false)} /> : null}
     </AppShell>
   );
 }
@@ -275,11 +278,13 @@ function Line({ label, value, mono = false }: { label: string; value: string; mo
 function PaymentInstruction({
   method,
   totalAmount,
-  onCopy
+  onCopy,
+  onOpenQris
 }: {
   method: string;
   totalAmount: number;
   onCopy: (value: string, label: string) => void;
+  onOpenQris: () => void;
 }) {
   if (method === "QRIS") {
     return (
@@ -289,7 +294,7 @@ function PaymentInstruction({
           <p className="mt-1 text-xs font-semibold text-success/80">Scan, bayar, lalu upload bukti transaksi.</p>
         </div>
         <div className="grid gap-4 p-3 sm:grid-cols-[220px_1fr] sm:items-center sm:p-4">
-          <div className="relative mx-auto grid aspect-square w-full max-w-[min(100%,260px)] place-items-center rounded-xl border border-line bg-white p-3 shadow-soft sm:max-w-none sm:p-4">
+          <div className="relative mx-auto grid aspect-square w-36 place-items-center rounded-xl border border-line bg-white p-2 shadow-soft sm:w-full sm:p-4">
             <Image
               src="/payments/qris/qris.jpg"
               alt="QRIS SinyalKita"
@@ -308,6 +313,10 @@ function PaymentInstruction({
           <div>
             <p className="text-sm font-bold text-ink">Nominal yang harus dibayar</p>
             <p className="mono mt-2 text-3xl font-bold text-ink">{formatCurrency(totalAmount)}</p>
+            <Button type="button" variant="ghost" className="mt-3 bg-mist sm:hidden" onClick={onOpenQris}>
+              <QrCode className="h-4 w-4" />
+              Perjelas QRIS
+            </Button>
             <div className="mt-4 grid gap-2 text-sm font-semibold leading-6 text-ink-soft">
               <p>1. Buka mobile banking atau e-wallet.</p>
               <p>2. Scan QRIS dan masukkan nominal sesuai total pembayaran.</p>
@@ -346,6 +355,45 @@ function LineLight({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-4 py-1 text-sm">
       <span className="font-semibold text-ink-soft">{label}</span>
       <span className="text-right font-bold text-ink">{value}</span>
+    </div>
+  );
+}
+
+function QrisModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/55 px-4 py-6 backdrop-blur-md sm:hidden">
+      <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-lift">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="font-heading text-lg font-bold text-ink">QRIS SinyalKita</p>
+            <p className="text-xs font-semibold text-ink-soft">Perbesar layar untuk scan lebih jelas.</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Tutup QRIS"
+            onClick={onClose}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-mist text-ink-soft hover:bg-danger-soft hover:text-danger"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="relative grid aspect-square place-items-center rounded-xl border border-line bg-white p-3">
+          <Image
+            src="/payments/qris/qris.jpg"
+            alt="QRIS SinyalKita diperbesar"
+            width={340}
+            height={340}
+            className="relative z-10 h-auto max-h-full w-auto max-w-full object-contain"
+            unoptimized
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+          <span className="absolute inset-4 grid place-items-center text-center text-xs font-bold text-ink-soft">
+            Letakkan gambar QRIS di public/payments/qris/qris.jpg
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
