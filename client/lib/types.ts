@@ -12,6 +12,7 @@ export type User = {
   email: string | null;
   phone: string;
   address: string;
+  serverName: string;
   role: Role;
 };
 

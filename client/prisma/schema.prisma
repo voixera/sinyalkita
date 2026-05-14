@@ -45,6 +45,7 @@ model User {
   passwordHash String
   phone        String
   address      String
+  serverName   String         @default("Server Jombok")
   role         Role           @default(CUSTOMER)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt

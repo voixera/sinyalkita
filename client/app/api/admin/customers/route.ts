@@ -11,6 +11,7 @@ const createCustomerSchema = z.object({
   password: z.string().min(6),
   phone: z.string().min(8),
   address: z.string().min(8),
+  serverName: z.enum(["Server Jombok", "Server Kepung", "Server Pare"]).default("Server Jombok"),
   packageId: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   monthlyAmount: z.coerce.number().int().positive().optional()
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
           passwordHash,
           phone: payload.phone,
           address: payload.address,
+          serverName: payload.serverName,
           role: "CUSTOMER",
           subscription: {
             create: {

@@ -102,6 +102,7 @@ export const api = {
     password: string;
     phone: string;
     address: string;
+    serverName: string;
     packageId: string;
     email?: string;
     monthlyAmount?: number;

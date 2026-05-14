@@ -97,9 +97,9 @@ export default function DashboardPage() {
           </div>
 
           <section className="mobile-stack lg:grid lg:grid-cols-3 lg:gap-5">
+            <MiniCard title="Server layanan" value={data.user.serverName} />
             <MiniCard title="Alamat layanan" value={data.user.address} />
             <MiniCard title="Kontak terdaftar" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
-            <MiniCard title="Catatan" value="Layanan ini hanya tersedia untuk user aktif. Pembuatan akun dilakukan oleh admin." />
           </section>
 
           <section className="mobile-card rounded-xl border border-line bg-white p-5 shadow-soft">

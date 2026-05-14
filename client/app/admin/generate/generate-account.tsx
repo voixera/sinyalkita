@@ -51,6 +51,7 @@ export default function GenerateAccountPage() {
       password: String(form.get("password") || ""),
       phone: String(form.get("phone") || ""),
       address: String(form.get("address") || ""),
+      serverName: String(form.get("serverName") || "Server Jombok"),
       packageId: String(form.get("packageId") || ""),
       email: String(form.get("email") || ""),
       monthlyAmount: Number(form.get("monthlyAmount") || 0) || undefined
@@ -132,6 +133,19 @@ export default function GenerateAccountPage() {
               </label>
               <Field name="phone" label="Nomor WhatsApp" placeholder="0812..." />
               <Field name="email" label="Email opsional" placeholder="nama@email.com" type="email" required={false} />
+              <label className="block text-sm font-bold text-ink">
+                Server
+                <select
+                  name="serverName"
+                  required
+                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink"
+                  defaultValue="Server Jombok"
+                >
+                  <option value="Server Jombok">Server Jombok</option>
+                  <option value="Server Kepung">Server Kepung</option>
+                  <option value="Server Pare">Server Pare</option>
+                </select>
+              </label>
               <div className="rounded-xl border border-line bg-mist/70 p-4">
                 <p className="text-sm font-bold text-ink">Paket layanan</p>
                 <p className="mt-1 font-semibold text-ink-soft">

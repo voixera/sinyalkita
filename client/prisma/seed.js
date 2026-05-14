@@ -35,6 +35,7 @@ async function main() {
       passwordHash: passwordCustomer,
       phone: "0812-4400-1729",
       address: "Jl. Anggrek Raya No. 18, Bandung",
+      serverName: "Server Jombok",
       role: "CUSTOMER",
       subscription: {
         create: {

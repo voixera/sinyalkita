@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
         email: true,
         phone: true,
         address: true,
+        serverName: true,
         role: true,
         subscription: {
           include: { package: true }
@@ -56,6 +57,7 @@ export async function GET(req: NextRequest) {
         email: user.email,
         phone: user.phone,
         address: user.address,
+        serverName: user.serverName,
         role: user.role
       },
       subscription: user.subscription,
