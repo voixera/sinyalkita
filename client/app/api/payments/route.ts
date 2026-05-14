@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const paySchema = z.object({
   billingIds: z.array(z.string().min(1)).min(1).max(12),
-  method: z.enum(["Transfer BNI", "Transfer BCA", "QRIS", "Transfer Manual"]),
+  method: z.enum(["Transfer SEABANK", "Transfer JAGO", "QRIS", "DANA"]),
   proofImage: z.string().min(20).max(2_500_000),
   proofName: z.string().min(1).max(120)
 });

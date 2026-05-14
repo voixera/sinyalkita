@@ -24,7 +24,8 @@ async function request<T>(path: string, options: RequestInit = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(data.message || "Permintaan belum dapat diproses.", response.status);
+    const message = typeof data.message === "string" && data.message.trim() ? data.message : "Permintaan belum dapat diproses.";
+    throw new ApiError(message, response.status);
   }
   return data as T;
 }

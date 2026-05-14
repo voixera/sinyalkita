@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Building2, CheckCircle2, Landmark, QrCode, Upload, WalletCards } from "lucide-react";
+import { Building2, CheckCircle2, Copy, Landmark, QrCode, ShieldCheck, Upload, WalletCards } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -12,27 +12,27 @@ import { formatCurrency, formatDate, shortMonth } from "@/lib/format";
 import type { Billing, MeResponse } from "@/lib/types";
 
 const methods = [
-  { id: "Transfer BNI", title: "BNI", desc: "Transfer bank ke rekening SinyalKita", icon: Landmark },
-  { id: "Transfer BCA", title: "BCA", desc: "Transfer bank ke rekening SinyalKita", icon: Landmark },
-  { id: "QRIS", title: "QRIS", desc: "Dompet digital dan mobile banking", icon: QrCode },
-  { id: "Transfer Manual", title: "Transfer Manual", desc: "Konfirmasi manual ke admin", icon: Building2 }
+  { id: "QRIS", title: "QRIS", desc: "Scan cepat dari semua mobile banking dan e-wallet", icon: QrCode },
+  { id: "Transfer SEABANK", title: "SEABANK", desc: "Transfer bank ke rekening SEABANK", icon: Landmark },
+  { id: "Transfer JAGO", title: "JAGO", desc: "Transfer bank ke rekening JAGO", icon: Landmark },
+  { id: "DANA", title: "DANA", desc: "Transfer manual ke nomor DANA", icon: Building2 }
 ];
 
 const paymentDetails: Record<string, { label: string; value: string; note: string }> = {
-  "Transfer BNI": {
-    label: "No. Rekening BNI",
-    value: "1234567890",
-    note: "a.n. SinyalKita. Transfer sesuai nominal tagihan lalu kirim pembayaran untuk dicek admin."
+  "Transfer SEABANK": {
+    label: "No. Rekening SEABANK",
+    value: "901212661390",
+    note: "a.n Audrey Faisal Riza, Transfer sesuai nominal tagihan lalu kirim pembayaran untuk di cek admin."
   },
-  "Transfer BCA": {
-    label: "No. Rekening BCA",
-    value: "0987654321",
-    note: "a.n. SinyalKita. Transfer sesuai nominal tagihan lalu kirim pembayaran untuk dicek admin."
+  "Transfer JAGO": {
+    label: "No. Rekening JAGO",
+    value: "109275713735",
+    note: "a.n Audrey Faisal Riza, Transfer sesuai nominal tagihan lalu kirim pembayaran untuk di cek admin."
   },
-  "Transfer Manual": {
+  "DANA": {
     label: "Konfirmasi admin",
-    value: "0812-0000-2015",
-    note: "Hubungi admin setelah transfer. Admin akan mengecek pembayaran sebelum tagihan menjadi lunas."
+    value: "085179657739",
+    note: "a.n Audrey Faisal Riza, Transfer sesuai nominal tagihan lalu kirim pembayaran untuk di cek admin."
   }
 };
 
@@ -102,6 +102,11 @@ export default function PaymentPage() {
     );
   }
 
+  async function copyPaymentValue(value: string, label: string) {
+    await navigator.clipboard.writeText(value);
+    showToast({ title: `${label} disalin.`, tone: "success" });
+  }
+
   return (
     <AppShell>
       <div className="mb-6">
@@ -114,7 +119,7 @@ export default function PaymentPage() {
       ) : !data || !billings ? (
         <SkeletonBlock className="h-96" />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
           <section className="glass-panel rounded-xl p-5">
             <div className="mb-5 rounded-xl border border-line bg-white p-4">
               <div className="flex items-start justify-between gap-3">
@@ -181,7 +186,7 @@ export default function PaymentPage() {
                     onClick={() => setMethod(item.id)}
                     className={`flex items-center gap-4 rounded-xl border p-4 text-left ${
                       active
-                        ? "border-ocean/30 bg-white shadow-soft"
+                        ? "border-ocean/40 bg-white shadow-soft ring-4 ring-ocean/5"
                         : "border-line bg-white/65 hover:-translate-y-0.5 hover:border-ocean/25 hover:bg-white"
                     }`}
                   >
@@ -197,7 +202,7 @@ export default function PaymentPage() {
                 );
               })}
             </div>
-            <PaymentInstruction method={method} />
+            <PaymentInstruction method={method} totalAmount={totalAmount} onCopy={copyPaymentValue} />
             <div className="mt-4 rounded-xl border border-line bg-white p-4">
               <p className="text-sm font-bold text-ink">Upload bukti transfer</p>
               <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-ocean/30 bg-mist/60 px-4 py-6 text-center hover:bg-white">
@@ -212,6 +217,12 @@ export default function PaymentPage() {
           <section className="rounded-xl bg-ink p-6 text-white shadow-lift">
             <p className="text-sm font-bold text-white/60">Total pembayaran</p>
             <p className="mono mt-2 text-4xl font-bold">{formatCurrency(totalAmount)}</p>
+            <div className="mt-5 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+              <p className="text-sm font-semibold leading-6 text-white/75">
+                Pastikan nominal sama dengan total tagihan, lalu upload bukti agar admin bisa verifikasi lebih cepat.
+              </p>
+            </div>
             <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-sm">
               <Line label="Tagihan dipilih" value={`${selectedBillings.length} tagihan`} />
               <Line
@@ -261,19 +272,30 @@ function Line({ label, value, mono = false }: { label: string; value: string; mo
   );
 }
 
-function PaymentInstruction({ method }: { method: string }) {
+function PaymentInstruction({
+  method,
+  totalAmount,
+  onCopy
+}: {
+  method: string;
+  totalAmount: number;
+  onCopy: (value: string, label: string) => void;
+}) {
   if (method === "QRIS") {
     return (
-      <div className="mt-4 rounded-xl border border-line bg-white p-4">
-        <p className="text-sm font-bold text-ink">QRIS SinyalKita</p>
-        <div className="mt-3 grid gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
-          <div className="relative grid aspect-square place-items-center rounded-xl border border-dashed border-line bg-mist p-3">
+      <div className="mt-4 overflow-hidden rounded-xl border border-success/15 bg-white shadow-soft">
+        <div className="border-b border-line bg-success-soft px-4 py-3">
+          <p className="text-sm font-bold text-success">QRIS SinyalKita</p>
+          <p className="mt-1 text-xs font-semibold text-success/80">Scan, bayar, lalu upload bukti transaksi.</p>
+        </div>
+        <div className="grid gap-4 p-4 sm:grid-cols-[220px_1fr] sm:items-center">
+          <div className="relative grid aspect-square place-items-center rounded-xl border border-line bg-white p-4 shadow-soft">
             <Image
               src="/payments/qris/qris.jpg"
               alt="QRIS SinyalKita"
-              width={160}
-              height={160}
-              className="relative z-10 h-40 w-40 object-contain"
+              width={210}
+              height={210}
+              className="relative z-10 h-full w-full object-contain"
               unoptimized
               onError={(event) => {
                 event.currentTarget.style.display = "none";
@@ -283,20 +305,47 @@ function PaymentInstruction({ method }: { method: string }) {
               Letakkan gambar QRIS di public/payments/qris/qris.jpg
             </span>
           </div>
-          <p className="text-sm font-semibold leading-6 text-ink-soft">
-            Scan QRIS, bayar sesuai nominal tagihan, lalu klik Kirim pembayaran agar admin mengecek transaksi.
-          </p>
+          <div>
+            <p className="text-sm font-bold text-ink">Nominal yang harus dibayar</p>
+            <p className="mono mt-2 text-3xl font-bold text-ink">{formatCurrency(totalAmount)}</p>
+            <div className="mt-4 grid gap-2 text-sm font-semibold leading-6 text-ink-soft">
+              <p>1. Buka mobile banking atau e-wallet.</p>
+              <p>2. Scan QRIS dan masukkan nominal sesuai total pembayaran.</p>
+              <p>3. Simpan bukti transaksi, lalu upload di bawah.</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const detail = paymentDetails[method];
+  const detail = paymentDetails[method] || paymentDetails["Transfer SEABANK"];
   return (
-    <div className="mt-4 rounded-xl border border-line bg-white p-4">
-      <p className="text-sm font-bold text-ink">{detail.label}</p>
-      <p className="mono mt-2 text-2xl font-bold text-ink">{detail.value}</p>
-      <p className="mt-2 text-sm font-semibold leading-6 text-ink-soft">{detail.note}</p>
+    <div className="mt-4 rounded-xl border border-line bg-white p-4 shadow-soft">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-bold text-ink">{detail.label}</p>
+          <p className="mono mt-2 text-2xl font-bold text-ink">{detail.value}</p>
+        </div>
+        <Button type="button" variant="ghost" className="bg-mist sm:bg-white" onClick={() => onCopy(detail.value, detail.label)}>
+          <Copy className="h-4 w-4" />
+          Salin
+        </Button>
+      </div>
+      <div className="mt-4 rounded-xl bg-mist/70 p-4">
+        <LineLight label="Nominal" value={formatCurrency(totalAmount)} />
+        <LineLight label="Atas nama" value="Audrey Faisal Riza" />
+      </div>
+      <p className="mt-3 text-sm font-semibold leading-6 text-ink-soft">{detail.note}</p>
+    </div>
+  );
+}
+
+function LineLight({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-1 text-sm">
+      <span className="font-semibold text-ink-soft">{label}</span>
+      <span className="text-right font-bold text-ink">{value}</span>
     </div>
   );
 }

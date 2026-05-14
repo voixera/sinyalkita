@@ -59,10 +59,13 @@ export default function GenerateAccountPage() {
 
     try {
       const result = await api.createCustomer(payload);
+      if (!result.credentials?.loginId || !result.credentials?.password) {
+        throw new Error("Akun dibuat, tetapi credential belum diterima. Cek riwayat akun.");
+      }
       setGenerated(result.credentials);
       event.currentTarget.reset();
       setPassword("");
-      showToast({ title: "Akun user berhasil dibuat.", tone: "success" });
+      showToast({ title: `Akun ${result.credentials.loginId} berhasil dibuat.`, tone: "success" });
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Akun user belum dapat dibuat.", tone: "info" });
     } finally {

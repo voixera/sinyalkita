@@ -16,7 +16,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     () => ({
       showToast: (toast: Omit<Toast, "id">) => {
         const id = Date.now();
-        setToasts((current) => [...current, { id, ...toast }]);
+        const title = typeof toast.title === "string" && toast.title.trim() ? toast.title : "Permintaan selesai diproses.";
+        setToasts((current) => [...current, { ...toast, id, title }]);
         window.setTimeout(() => setToasts((current) => current.filter((item) => item.id !== id)), 3600);
       }
     }),
