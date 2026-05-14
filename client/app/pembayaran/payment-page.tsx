@@ -120,8 +120,8 @@ export default function PaymentPage() {
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
-          <section className="glass-panel rounded-xl p-5">
-            <div className="mb-5 rounded-xl border border-line bg-white p-4">
+          <section className="glass-panel rounded-xl p-4 sm:p-5">
+            <div className="mb-5 rounded-xl border border-line bg-white p-3 sm:p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-heading text-xl font-bold text-ink">Pilih tagihan</p>
@@ -288,14 +288,14 @@ function PaymentInstruction({
           <p className="text-sm font-bold text-success">QRIS SinyalKita</p>
           <p className="mt-1 text-xs font-semibold text-success/80">Scan, bayar, lalu upload bukti transaksi.</p>
         </div>
-        <div className="grid gap-4 p-4 sm:grid-cols-[220px_1fr] sm:items-center">
-          <div className="relative grid aspect-square place-items-center rounded-xl border border-line bg-white p-4 shadow-soft">
+        <div className="grid gap-4 p-3 sm:grid-cols-[220px_1fr] sm:items-center sm:p-4">
+          <div className="relative mx-auto grid aspect-square w-full max-w-[min(100%,260px)] place-items-center rounded-xl border border-line bg-white p-3 shadow-soft sm:max-w-none sm:p-4">
             <Image
               src="/payments/qris/qris.jpg"
               alt="QRIS SinyalKita"
               width={210}
               height={210}
-              className="relative z-10 h-full w-full object-contain"
+              className="relative z-10 h-auto max-h-full w-auto max-w-full object-contain"
               unoptimized
               onError={(event) => {
                 event.currentTarget.style.display = "none";
