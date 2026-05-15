@@ -178,95 +178,146 @@ function OperationalChart({
   onWalletFilterChange: (value: string) => void;
 }) {
   const width = 760;
-  const height = 300;
-  const padding = { top: 24, right: 22, bottom: 46, left: 70 };
+  const height = 320;
+  const padding = { top: 30, right: 28, bottom: 54, left: 76 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
   const maxValue = Math.max(100000, ...points.flatMap((point) => [point.visibleRevenue, point.pending]));
+  const maxReports = Math.max(1, ...points.map((point) => point.reports));
   const ySteps = [1, 0.75, 0.5, 0.25, 0];
   const xFor = (index: number) => padding.left + (points.length === 1 ? chartWidth / 2 : (chartWidth / (points.length - 1)) * index);
   const yFor = (value: number) => padding.top + chartHeight - (value / maxValue) * chartHeight;
-  const linePath = (key: "visibleRevenue" | "pending") =>
-    points.map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(point[key])}`).join(" ");
+  const reportHeightFor = (value: number) => Math.max(value > 0 ? 8 : 0, (value / maxReports) * 58);
+  const linePath = (key: "visibleRevenue" | "pending") => smoothLinePath(points.map((point, index) => [xFor(index), yFor(point[key])]));
+  const revenuePath = linePath("visibleRevenue");
+  const pendingPath = linePath("pending");
+  const revenueAreaPath = areaPath(revenuePath, points.length, xFor(0), xFor(points.length - 1), padding.top + chartHeight);
+  const pendingAreaPath = areaPath(pendingPath, points.length, xFor(0), xFor(points.length - 1), padding.top + chartHeight);
   const currentRevenue = points.reduce((total, point) => total + point.visibleRevenue, 0);
   const currentPending = points.reduce((total, point) => total + point.pending, 0);
+  const totalReports = points.reduce((total, point) => total + point.reports, 0);
 
   return (
-    <div className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <div>
-          <p className="font-heading text-xl font-bold text-ink">Diagram operasional</p>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-ink-soft">
-            <span className="inline-flex min-h-9 items-center rounded-lg border border-line bg-mist/70 px-3">Mingguan</span>
-            <span className="inline-flex min-h-9 items-center rounded-lg border border-line bg-white px-3">{rangeLabel}</span>
+    <div className="overflow-hidden rounded-xl border border-line/80 bg-white shadow-soft">
+      <div className="border-b border-line/70 bg-[radial-gradient(circle_at_top_left,rgba(47,154,109,0.14),transparent_32%),linear-gradient(135deg,#ffffff,#f7fbfd)] p-4 sm:p-5">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+          <div>
+            <p className="font-heading text-xl font-bold text-ink">Diagram operasional</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-ink-soft">
+              <span className="inline-flex min-h-9 items-center rounded-lg border border-line/80 bg-white/75 px-3 shadow-sm backdrop-blur">Mingguan</span>
+              <span className="inline-flex min-h-9 items-center rounded-lg border border-line/80 bg-white/85 px-3 shadow-sm backdrop-blur">{rangeLabel}</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <select
+                className="min-h-9 appearance-none rounded-lg border border-line/80 bg-white/90 pl-3 pr-9 text-xs font-bold text-ink-soft shadow-sm"
+                value={walletFilter}
+                onChange={(event) => onWalletFilterChange(event.target.value)}
+              >
+                <option value="ALL">Semua Dompet</option>
+                {methods.map((method) => (
+                  <option key={method} value={method}>
+                    {method}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
+            </div>
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-ink text-white shadow-sm">
+              <BarChart3 className="h-4 w-4" />
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <select
-              className="min-h-9 appearance-none rounded-lg border border-line bg-white pl-3 pr-9 text-xs font-bold text-ink-soft"
-              value={walletFilter}
-              onChange={(event) => onWalletFilterChange(event.target.value)}
-            >
-              <option value="ALL">Semua Dompet</option>
-              {methods.map((method) => (
-                <option key={method} value={method}>
-                  {method}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
-          </div>
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-success-soft text-success">
-            <BarChart3 className="h-4 w-4" />
-          </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <ChartStat label="Pemasukan" value={formatCurrency(currentRevenue)} tone="success" />
+          <ChartStat label="Tagihan jatuh tempo" value={formatCurrency(currentPending)} tone="danger" />
+          <ChartStat label="Report masuk" value={`${totalReports} laporan`} tone="warning" />
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <ChartStat label="Pemasukan" value={formatCurrency(currentRevenue)} tone="success" />
-        <ChartStat label="Tagihan jatuh tempo" value={formatCurrency(currentPending)} tone="danger" />
-        <ChartStat label="Report masuk" value={`${points.reduce((total, point) => total + point.reports, 0)} laporan`} tone="warning" />
-      </div>
-
-      <div className="mt-5 overflow-hidden rounded-lg border border-line bg-white">
-        <svg viewBox={`0 0 ${width} ${height}`} className="block h-[300px] w-full" role="img" aria-label="Grafik operasional mingguan admin">
-          <rect width={width} height={height} fill="#ffffff" />
-          {ySteps.map((step) => {
-            const y = padding.top + chartHeight * (1 - step);
-            return (
-              <g key={step}>
-                <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#e2e8f0" strokeWidth="1" />
-                <text x={padding.left - 14} y={y + 4} textAnchor="end" className="fill-slate-400 text-[12px] font-bold">
-                  {formatCompact(maxValue * step)}
-                </text>
+      <div className="p-3 sm:p-5">
+        <div className="overflow-hidden rounded-lg border border-line/80 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+          <svg viewBox={`0 0 ${width} ${height}`} className="block h-[320px] w-full" role="img" aria-label="Grafik operasional mingguan admin">
+            <defs>
+              <linearGradient id="chartRevenueStroke" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#43B37D" />
+                <stop offset="100%" stopColor="#0F3A63" />
+              </linearGradient>
+              <linearGradient id="chartRevenueFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#2F9A6D" stopOpacity="0.24" />
+                <stop offset="100%" stopColor="#2F9A6D" stopOpacity="0.02" />
+              </linearGradient>
+              <linearGradient id="chartPendingFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#B85C66" stopOpacity="0.16" />
+                <stop offset="100%" stopColor="#B85C66" stopOpacity="0.01" />
+              </linearGradient>
+              <filter id="chartLineGlow" x="-12%" y="-30%" width="124%" height="160%">
+                <feDropShadow dx="0" dy="7" stdDeviation="7" floodColor="#0F3A63" floodOpacity="0.16" />
+              </filter>
+            </defs>
+            <rect width={width} height={height} fill="#fbfdff" />
+            <rect x="1" y="1" width={width - 2} height={height - 2} rx="14" fill="url(#chartRevenueFill)" opacity="0.24" />
+            {ySteps.map((step) => {
+              const y = padding.top + chartHeight * (1 - step);
+              return (
+                <g key={step}>
+                  <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="#dbe5ee" strokeDasharray="6 8" strokeWidth="1" />
+                  <text x={padding.left - 14} y={y + 4} textAnchor="end" className="fill-slate-400 text-[12px] font-bold">
+                    {formatCompact(maxValue * step)}
+                  </text>
+                </g>
+              );
+            })}
+            {points.map((point, index) => {
+              const x = xFor(index);
+              const barHeight = reportHeightFor(point.reports);
+              const baseline = padding.top + chartHeight;
+              return (
+                <rect
+                  key={`${point.date}-report`}
+                  x={x - 12}
+                  y={baseline - barHeight}
+                  width="24"
+                  height={barHeight}
+                  rx="8"
+                  fill="#B9822E"
+                  opacity={point.reports > 0 ? "0.22" : "0"}
+                />
+              );
+            })}
+            {points.map((point, index) => (
+              <text key={point.date} x={xFor(index)} y={height - 16} textAnchor="middle" className="fill-slate-400 text-[12px] font-bold">
+                {point.label}
+              </text>
+            ))}
+            {revenueAreaPath ? <path d={revenueAreaPath} fill="url(#chartRevenueFill)" /> : null}
+            {pendingAreaPath ? <path d={pendingAreaPath} fill="url(#chartPendingFill)" /> : null}
+            <path d={revenuePath} fill="none" filter="url(#chartLineGlow)" stroke="url(#chartRevenueStroke)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" />
+            <path d={pendingPath} fill="none" stroke="#B85C66" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3.5" />
+            {points.map((point, index) => (
+              <g key={`${point.date}-dots`}>
+                <circle cx={xFor(index)} cy={yFor(point.visibleRevenue)} r="7" fill="#ffffff" stroke="#2F9A6D" strokeWidth="3" />
+                <circle cx={xFor(index)} cy={yFor(point.pending)} r="5.4" fill="#ffffff" stroke="#B85C66" strokeWidth="2.5" />
               </g>
-            );
-          })}
-          {points.map((point, index) => (
-            <text key={point.date} x={xFor(index)} y={height - 16} textAnchor="middle" className="fill-slate-400 text-[12px] font-bold">
-              {point.label}
-            </text>
-          ))}
-          <path d={linePath("visibleRevenue")} fill="none" stroke="#2f9a6d" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
-          <path d={linePath("pending")} fill="none" stroke="#dc4f5b" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
-          {points.map((point, index) => (
-            <g key={`${point.date}-dots`}>
-              <circle cx={xFor(index)} cy={yFor(point.visibleRevenue)} r="4.5" fill="#2f9a6d" stroke="#ffffff" strokeWidth="2" />
-              <circle cx={xFor(index)} cy={yFor(point.pending)} r="3.8" fill="#dc4f5b" stroke="#ffffff" strokeWidth="2" />
-            </g>
-          ))}
-        </svg>
+            ))}
+          </svg>
+        </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-xs font-bold text-ink-soft">
+      <div className="flex flex-wrap gap-4 px-4 pb-4 text-xs font-bold text-ink-soft sm:px-5 sm:pb-5">
         <span className="inline-flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-success" />
+          <span className="h-2.5 w-2.5 rounded-full bg-success shadow-[0_0_0_4px_rgba(47,154,109,0.12)]" />
           Pemasukan
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-danger" />
+          <span className="h-2.5 w-2.5 rounded-full bg-danger shadow-[0_0_0_4px_rgba(184,92,102,0.12)]" />
           Tagihan
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-warning shadow-[0_0_0_4px_rgba(185,130,46,0.14)]" />
+          Report
         </span>
       </div>
     </div>
@@ -293,4 +344,22 @@ function formatCompact(value: number) {
   if (value >= 1000000) return `${Math.round(value / 1000000)}jt`;
   if (value >= 1000) return `${Math.round(value / 1000)}rb`;
   return String(Math.round(value));
+}
+
+function smoothLinePath(points: Array<[number, number]>) {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0][0]} ${points[0][1]}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point[0]} ${point[1]}`;
+
+    const previous = points[index - 1];
+    const controlX = previous[0] + (point[0] - previous[0]) / 2;
+    return `${path} C ${controlX} ${previous[1]}, ${controlX} ${point[1]}, ${point[0]} ${point[1]}`;
+  }, "");
+}
+
+function areaPath(linePath: string, pointCount: number, firstX: number, lastX: number, baseline: number) {
+  if (!linePath || pointCount === 0) return "";
+  return `${linePath} L ${lastX} ${baseline} L ${firstX} ${baseline} Z`;
 }
