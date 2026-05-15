@@ -162,10 +162,7 @@ export default function GenerateAccountPage() {
                 <p className="mt-1 font-semibold text-ink-soft">
                   {packages[0]?.name || "WiFi Bulanan"} {packages[0]?.speedMbps || 10} Mbps - {formatCurrency(serverPrices[serverName] || 65000)}
                 </p>
-                <p className="mt-1 text-xs font-bold text-ink-soft">Kepung 100rb/bulan, Pare dan Jombok 65rb/bulan.</p>
-                <p className="mt-2 text-xs font-semibold leading-5 text-ink-soft">
-                  Tagihan pertama dibuat untuk periode bulan depan dan tidak langsung ditagihkan saat akun dibuat.
-                </p>
+                <p className="mt-2 text-xs font-semibold text-ink-soft">Harga mengikuti server yang dipilih.</p>
                 <input type="hidden" name="packageId" value={packages[0]?.id || "pkg_wifi_bulanan_65"} />
               </div>
               <label className="block text-sm font-bold text-ink">
