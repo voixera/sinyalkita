@@ -69,7 +69,7 @@ export function StatusBadge({ status }: { status: string }) {
         : "bg-danger-soft text-danger border-danger/15";
 
   return (
-    <span className={clsx("inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold", tone)}>
+    <span className={clsx("inline-flex w-fit shrink-0 items-center self-start whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold", tone)}>
       {label[status] || status}
     </span>
   );
