@@ -6,6 +6,7 @@ import "@/styles/tabletstyles.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { SupportChat } from "@/components/support-chat";
 import { ToastProvider } from "@/components/toast";
+import { Analytics } from "@vercel/analytics/next";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SupportChat />
           </AuthProvider>
         </ToastProvider>
+        <Analytics />
       </body>
     </html>
   );
