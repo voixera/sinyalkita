@@ -115,7 +115,7 @@ function getMailErrorMessage(error: MailDeliveryError) {
   }
 
   if (error.responseCode === 401 || error.responseCode === 403 || code.includes("unauthorized") || code.includes("permission")) {
-    return "BREVO_API_KEY belum valid atau belum punya akses transactional email. Periksa API key v3 Brevo lalu redeploy Vercel.";
+    return "Brevo menolak API key. Periksa BREVO_API_KEY dan matikan pembatasan Authorized IPs untuk API key Brevo, lalu redeploy Vercel.";
   }
 
   if (providerMessage.includes("sender") || providerMessage.includes("from") || providerMessage.includes("domain")) {
