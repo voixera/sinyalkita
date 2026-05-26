@@ -120,7 +120,7 @@ export default function PaymentPage() {
       ) : !data || !billings ? (
         <SkeletonBlock className="h-96" />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="grid gap-5 xl:grid-cols-[1.08fr_0.92fr] xl:items-start">
           <section className="glass-panel rounded-xl p-4 sm:p-5">
             <div className="mb-5 rounded-xl border border-line bg-white p-3 sm:p-4">
               <div className="flex items-start justify-between gap-3">
@@ -221,7 +221,7 @@ export default function PaymentPage() {
             </div>
           </section>
 
-          <section className="rounded-xl bg-ink p-6 text-white shadow-lift">
+          <section className="rounded-xl bg-ink p-6 text-white shadow-lift xl:self-start">
             <p className="text-sm font-bold text-white/60">Total pembayaran</p>
             <p className="mono mt-2 text-4xl font-bold">{formatCurrency(totalAmount)}</p>
             <div className="mt-5 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4">
