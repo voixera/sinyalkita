@@ -62,6 +62,15 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload)
     }),
+  requestProfilePasswordCode: () =>
+    request<{ message: string; email: string; expiresInMinutes: number }>("/profile/password/request", {
+      method: "POST"
+    }),
+  confirmProfilePasswordChange: (payload: { code: string; password: string }) =>
+    request<{ message: string }>("/profile/password/confirm", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   me: () => request<MeResponse>("/customers/me"),
   billings: () => request<{ billings: Billing[] }>("/billings"),
   payments: () => request<{ payments: Payment[] }>("/payments"),
