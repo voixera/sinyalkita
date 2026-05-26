@@ -109,20 +109,20 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
 
   return (
     <AppShell admin={admin}>
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-5">
         <p className="text-sm font-bold text-ink-soft">{admin ? "Akun admin" : "Akun user"}</p>
-        <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Pengaturan Profil</h1>
+        <h1 className="mt-1 font-heading text-2xl font-bold text-ink sm:text-3xl">Pengaturan Profil</h1>
       </div>
 
       {error ? (
         <ErrorState title="Profil belum dapat dibuka" message={error} />
       ) : !profile ? (
-        <SkeletonBlock className="h-96" />
+        <SkeletonBlock className="h-72 sm:h-96" />
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
-          <section className="rounded-xl border border-line bg-white p-5 shadow-soft">
-            <div className="flex flex-col items-start gap-5 sm:flex-row">
-              <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-mist text-3xl font-bold text-ink shadow-soft">
+        <div className="grid gap-3 sm:gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+          <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
+            <div className="flex items-center gap-3 sm:items-start sm:gap-5">
+              <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-mist text-xl font-bold text-ink shadow-soft sm:h-28 sm:w-28 sm:text-3xl">
                 {profileImage ? (
                   <img src={profileImage} alt={profile.name} className="h-full w-full object-cover" />
                 ) : (
@@ -130,20 +130,21 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-heading text-2xl font-bold text-ink">{profile.name}</p>
-                <p className="mono mt-1 text-sm font-bold text-ink-soft">{profile.loginId}</p>
-                <p className="mt-3 text-sm font-semibold text-ink-soft">{profile.email || "Email belum terhubung"}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line/90 bg-white px-4 text-sm font-bold text-ink hover:border-ocean/30 hover:shadow-soft">
+                <p className="truncate font-heading text-xl font-bold text-ink sm:text-2xl">{profile.name}</p>
+                <p className="mono mt-1 truncate text-xs font-bold text-ink-soft sm:text-sm">{profile.loginId}</p>
+                <p className="mt-2 truncate text-xs font-semibold text-ink-soft sm:mt-3 sm:text-sm">{profile.email || "Email belum terhubung"}</p>
+                <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-5 sm:flex sm:flex-wrap">
+                  <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line/90 bg-white px-3 text-xs font-bold text-ink hover:border-ocean/30 hover:shadow-soft sm:min-h-11 sm:px-4 sm:text-sm">
                     <Camera className="h-4 w-4" />
-                    Pilih foto
+                    <span className="hidden sm:inline">Pilih foto</span>
+                    <span className="sm:hidden">Foto</span>
                     <input type="file" accept="image/*" className="hidden" onChange={choosePhoto} />
                   </label>
-                  <Button type="button" variant="ghost" className="bg-white" onClick={() => setProfileImage(null)}>
+                  <Button type="button" variant="ghost" className="min-h-10 bg-white px-3 text-xs sm:min-h-11 sm:px-4 sm:text-sm" onClick={() => setProfileImage(null)}>
                     <Trash2 className="h-4 w-4" />
                     Hapus
                   </Button>
-                  <Button type="button" onClick={savePhoto} disabled={photoSaving || profileImage === profile.profileImage}>
+                  <Button type="button" className="min-h-10 px-3 text-xs sm:min-h-11 sm:px-4 sm:text-sm" onClick={savePhoto} disabled={photoSaving || profileImage === profile.profileImage}>
                     <Save className="h-4 w-4" />
                     {photoSaving ? "Menyimpan..." : "Simpan"}
                   </Button>
@@ -152,23 +153,23 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
             </div>
           </section>
 
-          <section className="rounded-xl border border-line bg-white p-5 shadow-soft">
-            <div className="mb-5 flex items-start gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-success-soft text-success">
+          <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
+            <div className="mb-4 flex items-start gap-3 sm:mb-5">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-success sm:h-11 sm:w-11">
                 <MailCheck className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="font-heading text-xl font-bold text-ink">Email terhubung</h2>
-                <p className="mt-1 text-sm font-semibold text-ink-soft">Kode dikirim ke email lama sebelum perubahan disimpan.</p>
+                <h2 className="font-heading text-lg font-bold text-ink sm:text-xl">Email terhubung</h2>
+                <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">Kode dikirim ke email lama sebelum perubahan disimpan.</p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-line bg-mist/70 p-4">
+            <div className="rounded-xl border border-line bg-mist/70 p-3 sm:p-4">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Email saat ini</p>
-              <p className="mt-2 font-bold text-ink">{profile.email || "Belum ada email"}</p>
+              <p className="mt-2 break-all text-sm font-bold text-ink sm:text-base">{profile.email || "Belum ada email"}</p>
             </div>
 
-            <div className="mt-4 grid gap-4">
+            <div className="mt-4 grid gap-3 sm:gap-4">
               <label className="block text-sm font-bold text-ink">
                 Email baru
                 <input
@@ -179,18 +180,18 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                     setEmailCodeSentTo("");
                     setEmailCode("");
                   }}
-                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
                   placeholder="email-baru@example.com"
                 />
               </label>
 
-              <Button type="button" variant="ghost" className="w-fit bg-mist" onClick={requestEmailCode} disabled={emailRequesting || !newEmail}>
+              <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={requestEmailCode} disabled={emailRequesting || !newEmail}>
                 <MailCheck className="h-4 w-4" />
                 {emailRequesting ? "Mengirim kode..." : "Kirim kode"}
               </Button>
 
               {emailCodeSentTo ? (
-                <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-sm font-semibold text-success">
+                <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-xs font-semibold text-success sm:text-sm">
                   Kode dikirim ke {emailCodeSentTo}.
                 </p>
               ) : null}
@@ -201,14 +202,14 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                   type="text"
                   value={emailCode}
                   onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
                   placeholder="000000"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                 />
               </label>
 
-              <Button type="button" className="w-fit" onClick={confirmEmailChange} disabled={emailConfirming || emailCode.length !== 6 || !newEmail}>
+              <Button type="button" className="min-h-10 w-full text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={confirmEmailChange} disabled={emailConfirming || emailCode.length !== 6 || !newEmail}>
                 <UserRound className="h-4 w-4" />
                 {emailConfirming ? "Memverifikasi..." : "Simpan email"}
               </Button>

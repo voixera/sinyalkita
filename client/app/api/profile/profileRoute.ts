@@ -25,8 +25,7 @@ export async function GET(req: NextRequest) {
         phone: true,
         address: true,
         serverName: true,
-        role: true,
-        profileImage: true
+        role: true
       }
     });
 
@@ -34,7 +33,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Profil tidak ditemukan." }, { status: 404 });
     }
 
-    return NextResponse.json({ profile });
+    return NextResponse.json({ profile: { ...profile, profileImage: null } });
   } catch (error) {
     return apiError(error);
   }
