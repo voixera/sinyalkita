@@ -33,6 +33,9 @@ type PasswordResetEmail = {
   expiresInMinutes: number;
 };
 
+const DEFAULT_EMAIL_LOGO_URL =
+  "https://raw.githubusercontent.com/voixera/sinyalkita/main/client/public/images/logoSinyalKita.png";
+
 export async function sendPasswordResetEmail({ to, name, code, expiresInMinutes }: PasswordResetEmail) {
   const brevoApiKey = readEnv("BREVO_API_KEY");
   const host = readEnv("SMTP_HOST");
@@ -126,10 +129,8 @@ function createPasswordResetEmail({
   code,
   expiresInMinutes
 }: Pick<PasswordResetEmail, "name" | "code" | "expiresInMinutes">) {
-  const logoUrl = getPublicAssetUrl("/images/logoSinyalKita.png");
-  const logoMarkup = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" width="56" height="56" alt="SinyalKita" style="display:block;width:56px;height:56px;border:0;object-fit:contain" />`
-    : `<span style="display:block;font-size:18px;font-weight:800;color:#0f3a63;line-height:56px;text-align:center">SK</span>`;
+  const logoUrl = getEmailLogoUrl();
+  const logoMarkup = `<img src="${escapeHtml(logoUrl)}" width="56" height="56" alt="SinyalKita" style="display:block;width:56px;height:56px;border:0" />`;
   const safeName = escapeHtml(name);
   const safeCode = escapeHtml(code);
   const safeMinutes = escapeHtml(String(expiresInMinutes));
@@ -161,7 +162,7 @@ function createPasswordResetEmail({
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
                         <tr>
                           <td width="68" style="vertical-align:middle">
-                            <div style="width:56px;height:56px;border-radius:16px;background:#ffffff;border:1px solid #d8e0e8;box-shadow:0 8px 24px rgba(11,22,40,0.08);overflow:hidden">
+                            <div style="width:56px;height:56px;border-radius:16px;background:#ffffff;border:1px solid #d8e0e8;box-shadow:0 8px 24px rgba(11,22,40,0.08);overflow:hidden;line-height:0">
                               ${logoMarkup}
                             </div>
                           </td>
@@ -203,25 +204,11 @@ function createPasswordResetEmail({
   };
 }
 
-function getPublicAssetUrl(path: string) {
-  const baseUrl = getClientBaseUrl();
-  if (!baseUrl) return "";
-
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${baseUrl}${normalizedPath}`;
+function getEmailLogoUrl() {
+  return normalizeUrl(readEnv("EMAIL_LOGO_URL")) || DEFAULT_EMAIL_LOGO_URL;
 }
 
-function getClientBaseUrl() {
-  const explicitUrl = readEnv("CLIENT_URL") || readEnv("NEXT_PUBLIC_APP_URL") || readEnv("NEXT_PUBLIC_SITE_URL");
-  if (explicitUrl) return normalizeBaseUrl(explicitUrl);
-
-  const vercelUrl = readEnv("VERCEL_PROJECT_PRODUCTION_URL") || readEnv("VERCEL_URL");
-  if (vercelUrl) return normalizeBaseUrl(vercelUrl);
-
-  return "";
-}
-
-function normalizeBaseUrl(value: string) {
+function normalizeUrl(value: string) {
   const trimmed = value.trim().replace(/\/+$/, "");
   if (!trimmed) return "";
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
