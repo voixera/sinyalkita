@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
+import { normalizeEmail, validateEmailVerificationCode } from "@/lib/server/email-verification";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,8 @@ const createCustomerSchema = z.object({
   address: z.string().min(8),
   serverName: z.enum(["Server Jombok", "Server Kepung", "Server Pare"]).default("Server Jombok"),
   packageId: z.string().optional(),
-  email: z.string().trim().toLowerCase().email()
+  email: z.string().trim().toLowerCase().email(),
+  emailVerificationCode: z.string().trim().regex(/^\d{6}$/)
 });
 
 const serverPrices: Record<string, number> = {
@@ -28,10 +30,26 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const payload = createCustomerSchema.parse(await req.json());
+    const email = normalizeEmail(payload.email);
     const selectedPackage = await prisma.package.findUnique({ where: { id: payload.packageId || "pkg_wifi_bulanan_65" } });
 
     if (!selectedPackage) {
       return NextResponse.json({ message: "Paket layanan tidak ditemukan." }, { status: 404 });
+    }
+
+    const existingEmail = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (existingEmail) {
+      return NextResponse.json({ message: "Email tersebut sudah digunakan akun lain." }, { status: 409 });
+    }
+
+    const emailVerification = await validateEmailVerificationCode({
+      targetEmail: email,
+      purpose: "CUSTOMER_EMAIL_LINK",
+      code: payload.emailVerificationCode
+    });
+
+    if (!emailVerification) {
+      return NextResponse.json({ message: "Kode verifikasi email belum sesuai atau sudah kedaluwarsa." }, { status: 400 });
     }
 
     const baseNumber = await prisma.user.count({ where: { role: "CUSTOMER" } });
@@ -45,12 +63,12 @@ export async function POST(req: NextRequest) {
     const year = period.getUTCFullYear();
 
     const customer = await prisma.$transaction(async (tx) => {
-      return tx.user.create({
+      const createdCustomer = await tx.user.create({
         data: {
           customerId: identity.customerId,
           loginId: identity.loginId,
           name: payload.name,
-          email: payload.email,
+          email,
           passwordHash,
           phone: payload.phone,
           address: payload.address,
@@ -86,6 +104,13 @@ export async function POST(req: NextRequest) {
           billings: { orderBy: { period: "desc" }, take: 1 }
         }
       });
+
+      await tx.emailVerificationCode.update({
+        where: { id: emailVerification.id },
+        data: { usedAt: new Date() }
+      });
+
+      return createdCustomer;
     });
 
     return NextResponse.json(

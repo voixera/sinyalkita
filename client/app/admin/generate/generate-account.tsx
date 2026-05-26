@@ -1,7 +1,7 @@
 "use client";
 
-import { Copy, KeyRound, Plus, RefreshCw } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { Copy, KeyRound, MailCheck, Plus, RefreshCw } from "lucide-react";
+import { FormEvent, type ChangeEventHandler, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { Button, ErrorState, SkeletonBlock } from "@/components/ui";
@@ -33,7 +33,12 @@ export default function GenerateAccountPage() {
   const [serverName, setServerName] = useState("Server Jombok");
   const [error, setError] = useState("");
   const [generated, setGenerated] = useState<GeneratedCredentials | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailVerificationCode, setEmailVerificationCode] = useState("");
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
   const [password, setPassword] = useState("");
+  const [sendingEmailCode, setSendingEmailCode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { ready, user } = useAuth();
   const { showToast } = useToast();
@@ -54,13 +59,14 @@ export default function GenerateAccountPage() {
 
     const form = new FormData(event.currentTarget);
     const payload = {
-      name: String(form.get("name") || ""),
+      name: customerName,
       password: String(form.get("password") || ""),
       phone: String(form.get("phone") || ""),
       address: String(form.get("address") || ""),
       serverName: String(form.get("serverName") || "Server Jombok"),
       packageId: String(form.get("packageId") || ""),
-      email: String(form.get("email") || "")
+      email,
+      emailVerificationCode
     };
 
     try {
@@ -70,6 +76,10 @@ export default function GenerateAccountPage() {
       }
       setGenerated(result.credentials);
       event.currentTarget.reset();
+      setCustomerName("");
+      setEmail("");
+      setEmailVerificationCode("");
+      setEmailCodeSent(false);
       setPassword("");
       setServerName("Server Jombok");
       showToast({ title: `Akun ${result.credentials.loginId} berhasil dibuat.`, tone: "success" });
@@ -77,6 +87,28 @@ export default function GenerateAccountPage() {
       showToast({ title: err instanceof Error ? err.message : "Akun user belum dapat dibuat.", tone: "info" });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function sendEmailCode() {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      showToast({ title: "Isi email user dulu.", tone: "info" });
+      return;
+    }
+
+    setSendingEmailCode(true);
+    try {
+      const result = await api.requestCustomerEmailCode({
+        email: normalizedEmail,
+        name: customerName || undefined
+      });
+      setEmailCodeSent(true);
+      showToast({ title: `${result.message} (${result.email})`, tone: "success" });
+    } catch (err) {
+      showToast({ title: err instanceof Error ? err.message : "Kode verifikasi email belum dapat dikirim.", tone: "info" });
+    } finally {
+      setSendingEmailCode(false);
     }
   }
 
@@ -121,7 +153,13 @@ export default function GenerateAccountPage() {
             </div>
 
             <form onSubmit={createCustomer} className="grid gap-4">
-              <Field name="name" label="Nama user" placeholder="Contoh: Faisal Riza" />
+              <Field
+                name="name"
+                label="Nama user"
+                placeholder="Contoh: Faisal Riza"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+              />
               <label className="block text-sm font-bold text-ink">
                 Kata sandi awal
                 <div className="mt-2 flex gap-2">
@@ -142,7 +180,42 @@ export default function GenerateAccountPage() {
                 </div>
               </label>
               <Field name="phone" label="Nomor WhatsApp" placeholder="0812..." />
-              <Field name="email" label="Email" placeholder="nama@email.com" type="email" />
+              <label className="block text-sm font-bold text-ink">
+                Email
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      setEmailCodeSent(false);
+                      setEmailVerificationCode("");
+                    }}
+                    className="min-w-0 flex-1 rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+                    placeholder="nama@email.com"
+                  />
+                  <Button type="button" variant="ghost" className="shrink-0 bg-white" onClick={sendEmailCode} disabled={sendingEmailCode}>
+                    <MailCheck className="h-4 w-4" />
+                    {sendingEmailCode ? "Mengirim..." : "Kirim kode"}
+                  </Button>
+                </div>
+              </label>
+              <label className="block text-sm font-bold text-ink">
+                Kode verifikasi email
+                <input
+                  name="emailVerificationCode"
+                  type="text"
+                  required
+                  value={emailVerificationCode}
+                  onChange={(event) => setEmailVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
+                  placeholder={emailCodeSent ? "Masukkan 6 digit kode dari email" : "Kirim kode ke email user dulu"}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                />
+              </label>
               <label className="block text-sm font-bold text-ink">
                 Server
                 <select
@@ -176,7 +249,7 @@ export default function GenerateAccountPage() {
                   placeholder="Alamat lengkap layanan"
                 />
               </label>
-              <Button disabled={submitting || packages.length === 0}>
+              <Button disabled={submitting || packages.length === 0 || emailVerificationCode.length !== 6}>
                 <Plus className="h-4 w-4" />
                 {submitting ? "Membuat akun..." : "Buat akun user"}
               </Button>
@@ -215,13 +288,17 @@ function Field({
   label,
   placeholder,
   type = "text",
-  required = true
+  required = true,
+  value,
+  onChange
 }: {
   name: string;
   label: string;
   placeholder: string;
   type?: string;
   required?: boolean;
+  value?: string;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <label className="block text-sm font-bold text-ink">
@@ -230,6 +307,8 @@ function Field({
         name={name}
         type={type}
         required={required}
+        value={value}
+        onChange={onChange}
         className="mt-2 w-full rounded-xl border-line bg-white px-4 py-3 text-sm font-semibold text-ink placeholder:text-ink-soft/50"
         placeholder={placeholder}
       />

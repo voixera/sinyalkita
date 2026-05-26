@@ -11,6 +11,7 @@ export type User = {
   loginId: string;
   name: string;
   email: string | null;
+  profileImage: string | null;
   phone: string;
   address: string;
   serverName: string;

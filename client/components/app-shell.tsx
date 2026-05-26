@@ -10,7 +10,8 @@ import {
   LayoutDashboard,
   LogOut,
   ReceiptText,
-  Server
+  Server,
+  UserCog
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,7 +26,8 @@ const customerNav = [
   { href: "/report-problem", label: "Report", icon: AlertTriangle },
   { href: "/tagihan", label: "Tagihan", icon: ReceiptText },
   { href: "/pembayaran", label: "Pembayaran", icon: CreditCard },
-  { href: "/riwayat", label: "Riwayat", icon: FileClock }
+  { href: "/riwayat", label: "Riwayat", icon: FileClock },
+  { href: "/profile", label: "Profil", icon: UserCog }
 ];
 
 const adminNav = [
@@ -34,7 +36,8 @@ const adminNav = [
   { href: "/admin/payments", label: "Verifikasi", icon: CreditCard, badge: "pendingPayments" },
   { href: "/admin/reports", label: "Report", icon: AlertTriangle, badge: "openReports" },
   { href: "/admin/generate", label: "Akun", icon: KeyRound },
-  { href: "/admin/history", label: "History", icon: History }
+  { href: "/admin/history", label: "History", icon: History },
+  { href: "/admin/profile", label: "Profil", icon: UserCog }
 ];
 
 export function AppShell({ children, admin = false }: { children: React.ReactNode; admin?: boolean }) {

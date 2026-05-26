@@ -57,12 +57,14 @@ async function main() {
 
   await prisma.user.upsert({
     where: { loginId: "admin-sinyalkita" },
-    update: {},
+    update: {
+      email: "rizafaisal130@gmail.com"
+    },
     create: {
       customerId: "SKT-ADMIN-00001",
       loginId: "admin-sinyalkita",
       name: "Admin SinyalKita",
-      email: "admin@sinyalkita.test",
+      email: "rizafaisal130@gmail.com",
       passwordHash: passwordAdmin,
       phone: "021-5088-1500",
       address: "Kantor Operasional SinyalKita",

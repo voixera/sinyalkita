@@ -1,4 +1,4 @@
-import type { Billing, MeResponse, Package, Payment, Role, ServerStatus, ServiceServer, TroubleReport } from "@/lib/types";
+import type { Billing, MeResponse, Package, Payment, Role, ServerStatus, ServiceServer, TroubleReport, User } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -43,6 +43,22 @@ export const api = {
     }),
   confirmPasswordReset: (payload: { identifier: string; code: string; password: string }) =>
     request<{ message: string }>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  profile: () => request<{ profile: User }>("/profile"),
+  updateProfile: (payload: { profileImage: string | null }) =>
+    request<{ profile: User }>("/profile", {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  requestProfileEmailChange: (newEmail: string) =>
+    request<{ message: string; email: string; expiresInMinutes: number }>("/profile/email/request", {
+      method: "POST",
+      body: JSON.stringify({ newEmail })
+    }),
+  confirmProfileEmailChange: (payload: { newEmail: string; code: string }) =>
+    request<{ message: string; profile: User }>("/profile/email/confirm", {
       method: "POST",
       body: JSON.stringify(payload)
     }),
@@ -134,6 +150,7 @@ export const api = {
     serverName: string;
     packageId: string;
     email: string;
+    emailVerificationCode: string;
     monthlyAmount?: number;
   }) =>
     request<{
@@ -148,6 +165,11 @@ export const api = {
       };
       credentials: { loginId: string; password: string };
     }>("/admin/customers", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  requestCustomerEmailCode: (payload: { email: string; name?: string }) =>
+    request<{ message: string; email: string; expiresInMinutes: number }>("/admin/customers/email-code", {
       method: "POST",
       body: JSON.stringify(payload)
     })

@@ -20,7 +20,7 @@ export async function requireAuth(req: NextRequest, role?: "CUSTOMER" | "ADMIN")
     const payload = jwt.verify(token, JWT_SECRET) as { sub: string };
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, name: true, email: true, loginId: true, customerId: true, role: true }
+      select: { id: true, name: true, email: true, loginId: true, customerId: true, role: true, profileImage: true }
     });
 
     if (!user) {

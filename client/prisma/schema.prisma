@@ -42,12 +42,18 @@ enum ServerStatus {
   DOWN
 }
 
+enum EmailVerificationPurpose {
+  PROFILE_EMAIL_CHANGE
+  CUSTOMER_EMAIL_LINK
+}
+
 model User {
   id                 String              @id @default(cuid())
   customerId         String              @unique
   loginId            String              @unique
   name               String
   email              String?             @unique
+  profileImage       String?
   passwordHash       String
   phone              String
   address            String
@@ -61,6 +67,7 @@ model User {
   generatedAccount   GeneratedAccount?
   troubleReports     TroubleReport[]
   passwordResetCodes PasswordResetCode[]
+  emailVerificationCodes EmailVerificationCode[]
 }
 
 model ServiceServer {
@@ -161,5 +168,22 @@ model PasswordResetCode {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model EmailVerificationCode {
+  id           String                   @id @default(cuid())
+  userId       String?
+  targetEmail  String
+  currentEmail String?
+  codeHash     String
+  purpose      EmailVerificationPurpose
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime                 @default(now())
+  user         User?                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([targetEmail, purpose, createdAt])
   @@index([expiresAt])
 }
