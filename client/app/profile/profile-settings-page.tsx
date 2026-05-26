@@ -25,7 +25,8 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       .profile()
       .then((data) => {
         setProfile(data.profile);
-        setProfileImage(data.profile.profileImage);
+        const localImage = localStorage.getItem(getProfilePhotoKey(data.profile.loginId));
+        setProfileImage(data.profile.profileImage || localImage);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Profil belum dapat dimuat."));
   }, []);
@@ -69,9 +70,20 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       const result = await api.updateProfile({ profileImage });
       setProfile(result.profile);
       setProfileImage(result.profile.profileImage);
+      localStorage.removeItem(getProfilePhotoKey(result.profile.loginId));
       showToast({ title: "Foto profil berhasil diperbarui.", tone: "success" });
     } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Foto profil belum dapat disimpan.", tone: "info" });
+      if (profile) {
+        if (profileImage) {
+          localStorage.setItem(getProfilePhotoKey(profile.loginId), profileImage);
+        } else {
+          localStorage.removeItem(getProfilePhotoKey(profile.loginId));
+        }
+        setProfile((current) => (current ? { ...current, profileImage } : current));
+        showToast({ title: "Foto profil disimpan di perangkat ini.", tone: "success" });
+      } else {
+        showToast({ title: err instanceof Error ? err.message : "Foto profil belum dapat disimpan.", tone: "info" });
+      }
     } finally {
       setPhotoSaving(false);
     }
@@ -121,35 +133,37 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       ) : (
         <div className="grid gap-3 sm:gap-4 xl:grid-cols-[0.85fr_1.15fr]">
           <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
-            <div className="flex items-center gap-3 sm:items-start sm:gap-5">
-              <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-mist text-xl font-bold text-ink shadow-soft sm:h-28 sm:w-28 sm:text-3xl">
-                {profileImage ? (
-                  <img src={profileImage} alt={profile.name} className="h-full w-full object-cover" />
-                ) : (
-                  <span>{initials}</span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-heading text-xl font-bold text-ink sm:text-2xl">{profile.name}</p>
-                <p className="mono mt-1 truncate text-xs font-bold text-ink-soft sm:text-sm">{profile.loginId}</p>
-                <p className="mt-2 truncate text-xs font-semibold text-ink-soft sm:mt-3 sm:text-sm">{profile.email || "Email belum terhubung"}</p>
-                <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-5 sm:flex sm:flex-wrap">
-                  <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line/90 bg-white px-3 text-xs font-bold text-ink hover:border-ocean/30 hover:shadow-soft sm:min-h-11 sm:px-4 sm:text-sm">
-                    <Camera className="h-4 w-4" />
-                    <span className="hidden sm:inline">Pilih foto</span>
-                    <span className="sm:hidden">Foto</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={choosePhoto} />
-                  </label>
-                  <Button type="button" variant="ghost" className="min-h-10 bg-white px-3 text-xs sm:min-h-11 sm:px-4 sm:text-sm" onClick={() => setProfileImage(null)}>
-                    <Trash2 className="h-4 w-4" />
-                    Hapus
-                  </Button>
-                  <Button type="button" className="min-h-10 px-3 text-xs sm:min-h-11 sm:px-4 sm:text-sm" onClick={savePhoto} disabled={photoSaving || profileImage === profile.profileImage}>
-                    <Save className="h-4 w-4" />
-                    {photoSaving ? "Menyimpan..." : "Simpan"}
-                  </Button>
+            <div className="grid gap-3 sm:flex sm:items-start sm:gap-5">
+              <div className="flex min-w-0 items-center gap-3 sm:contents">
+                <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-mist text-xl font-bold text-ink shadow-soft sm:h-28 sm:w-28 sm:text-3xl">
+                  {profileImage ? (
+                    <img src={profileImage} alt={profile.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{initials}</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-heading text-xl font-bold text-ink sm:text-2xl">{profile.name}</p>
+                  <p className="mono mt-1 truncate text-xs font-bold text-ink-soft sm:text-sm">{profile.loginId}</p>
+                  <p className="mt-2 truncate text-xs font-semibold text-ink-soft sm:mt-3 sm:text-sm">{profile.email || "Email belum terhubung"}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
+                    <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line/90 bg-white px-3 text-xs font-bold text-ink hover:border-ocean/30 hover:shadow-soft sm:min-h-11 sm:px-4 sm:text-sm">
+                      <Camera className="h-4 w-4" />
+                      <span className="hidden sm:inline">Pilih foto</span>
+                      <span className="sm:hidden">Foto</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={choosePhoto} />
+                    </label>
+                    <Button type="button" variant="ghost" className="min-h-10 bg-white px-3 text-xs sm:min-h-11 sm:px-4 sm:text-sm" onClick={() => setProfileImage(null)}>
+                      <Trash2 className="h-4 w-4" />
+                      Hapus
+                    </Button>
+                  </div>
                 </div>
               </div>
+              <Button type="button" className="min-h-10 w-full shrink-0 px-3 text-xs sm:ml-auto sm:min-h-11 sm:w-auto sm:px-4 sm:text-sm" onClick={savePhoto} disabled={photoSaving || profileImage === profile.profileImage}>
+                <Save className="h-4 w-4" />
+                {photoSaving ? "Menyimpan..." : "Simpan"}
+              </Button>
             </div>
           </section>
 
@@ -221,4 +235,8 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       )}
     </AppShell>
   );
+}
+
+function getProfilePhotoKey(loginId: string) {
+  return `sinyalkita_profile_photo_${loginId}`;
 }
