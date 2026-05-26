@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, KeyRound, LockKeyhole, Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui";
@@ -13,7 +14,8 @@ import { api } from "@/lib/api";
 type AuthMode = "login" | "forgot" | "reset";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const router = useRouter();
+  const { login, ready, token, user } = useAuth();
   const { showToast } = useToast();
   const [mode, setMode] = useState<AuthMode>("login");
   const [loginId, setLoginId] = useState("");
@@ -37,6 +39,11 @@ export default function LoginPage() {
           ? `Kode reset sudah dikirim ke ${resetEmail}.`
           : "Masukkan kode reset dari email terdaftar dan buat kata sandi baru."
         : "Web resmi user SinyalKita. Akun hanya dapat dibuat oleh admin.";
+
+  useEffect(() => {
+    if (!ready || !token || !user) return;
+    router.replace(user.role === "ADMIN" ? "/admin" : "/dashboard");
+  }, [ready, router, token, user]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

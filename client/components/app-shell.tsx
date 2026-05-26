@@ -43,6 +43,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
   const { logout, ready, token, user } = useAuth();
   const [adminBadges, setAdminBadges] = useState({ pendingPayments: 0, openReports: 0 });
   const nav = admin ? adminNav : customerNav;
+  const homeHref = admin ? "/admin" : "/dashboard";
   const brandSubtitle = user?.role === "ADMIN" ? "Admin Control Panel" : "Web resmi user";
   const blocked =
     !ready || !token || !user || (admin && user.role !== "ADMIN") || (!admin && user.role === "ADMIN");
@@ -98,7 +99,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-mist">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-line/70 bg-white/88 px-5 py-6 backdrop-blur-xl lg:block">
-        <Link href="/" className="flex items-center gap-3 rounded-xl px-2 py-1 hover:bg-mist">
+        <Link href={homeHref} className="flex items-center gap-3 rounded-xl px-2 py-1 hover:bg-mist">
           <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-white shadow-soft">
             <Image src="/images/logoSinyalKita.png" alt="Logo SinyalKita" width={40} height={40} className="h-10 w-10 object-contain" />
           </span>
@@ -147,7 +148,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
 
       <header className="sticky top-0 z-10 border-b border-line/70 bg-white/86 px-4 py-3 backdrop-blur-xl lg:hidden">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-heading text-lg font-bold text-ink">
+          <Link href={homeHref} className="flex items-center gap-2 font-heading text-lg font-bold text-ink">
             <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-white shadow-soft">
               <Image src="/images/logoSinyalKita.png" alt="Logo SinyalKita" width={32} height={32} className="h-8 w-8 object-contain" />
             </span>
