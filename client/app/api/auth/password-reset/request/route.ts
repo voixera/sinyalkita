@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError } from "@/lib/server/auth";
-import { MailConfigurationError, sendPasswordResetEmail } from "@/lib/server/mail";
+import { MailConfigurationError, MailDeliveryError, sendPasswordResetEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + RESET_CODE_EXPIRES_IN_MINUTES * 60 * 1000);
 
-    await prisma.$transaction([
+    const [, createdResetCode] = await prisma.$transaction([
       prisma.passwordResetCode.updateMany({
         where: { userId: user.id, usedAt: null },
         data: { usedAt: now }
@@ -58,12 +58,19 @@ export async function POST(req: Request) {
       })
     ]);
 
-    await sendPasswordResetEmail({
-      to: user.email,
-      name: user.name,
-      code,
-      expiresInMinutes: RESET_CODE_EXPIRES_IN_MINUTES
-    });
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        code,
+        expiresInMinutes: RESET_CODE_EXPIRES_IN_MINUTES
+      });
+    } catch (error) {
+      await prisma.passwordResetCode
+        .update({ where: { id: createdResetCode.id }, data: { usedAt: new Date() } })
+        .catch(() => undefined);
+      throw error;
+    }
 
     return NextResponse.json({
       message: "Kode reset dikirim ke email terdaftar.",
@@ -76,6 +83,21 @@ export async function POST(req: Request) {
         { message: "Layanan email belum dikonfigurasi. Hubungi admin SinyalKita." },
         { status: 503 }
       );
+    }
+
+    if (error instanceof MailDeliveryError) {
+      console.error("Password reset email delivery failed", {
+        code: error.code,
+        command: error.command,
+        responseCode: error.responseCode
+      });
+
+      const message =
+        error.code === "EAUTH" || error.responseCode === 535
+          ? "SMTP Brevo belum valid. Periksa SMTP_USER dan SMTP_PASS."
+          : "Layanan email belum dapat mengirim kode reset. Periksa konfigurasi SMTP Brevo.";
+
+      return NextResponse.json({ message }, { status: 503 });
     }
 
     return apiError(error);
