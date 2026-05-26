@@ -32,11 +32,11 @@ type PasswordResetEmail = {
 };
 
 export async function sendPasswordResetEmail({ to, name, code, expiresInMinutes }: PasswordResetEmail) {
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || user;
+  const host = readEnv("SMTP_HOST");
+  const port = Number(readEnv("SMTP_PORT") || 587);
+  const user = readEnv("SMTP_USER");
+  const pass = readEnv("SMTP_PASS");
+  const from = readEnv("SMTP_FROM") || user;
 
   if (!host || !user || !pass || !from) {
     throw new MailConfigurationError();
@@ -45,7 +45,7 @@ export async function sendPasswordResetEmail({ to, name, code, expiresInMinutes 
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: process.env.SMTP_SECURE === "true" || port === 465,
+    secure: readEnv("SMTP_SECURE") === "true" || port === 465,
     auth: {
       user,
       pass
@@ -81,6 +81,17 @@ export async function sendPasswordResetEmail({ to, name, code, expiresInMinutes 
   } catch (error) {
     throw new MailDeliveryError(error);
   }
+}
+
+function readEnv(key: string) {
+  const value = process.env[key]?.trim();
+  if (!value) return "";
+
+  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1).trim();
+  }
+
+  return value;
 }
 
 function escapeHtml(value: string) {

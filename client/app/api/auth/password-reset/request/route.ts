@@ -94,7 +94,7 @@ export async function POST(req: Request) {
 
       const message =
         error.code === "EAUTH" || error.responseCode === 535
-          ? "SMTP Brevo belum valid. Periksa SMTP_USER dan SMTP_PASS."
+          ? "SMTP Brevo belum valid. Periksa SMTP_USER, SMTP_PASS, lalu redeploy Vercel."
           : "Layanan email belum dapat mengirim kode reset. Periksa konfigurasi SMTP Brevo.";
 
       return NextResponse.json({ message }, { status: 503 });
