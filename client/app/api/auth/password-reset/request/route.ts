@@ -89,15 +89,11 @@ export async function POST(req: Request) {
       console.error("Password reset email delivery failed", {
         code: error.code,
         command: error.command,
-        responseCode: error.responseCode
+        responseCode: error.responseCode,
+        providerMessage: error.providerMessage
       });
 
-      const message =
-        error.code === "EAUTH" || error.responseCode === 535
-          ? "SMTP Brevo belum valid. Periksa SMTP_USER, SMTP_PASS, lalu redeploy Vercel."
-          : error.code?.startsWith("BREVO_API_")
-            ? "Brevo API belum dapat mengirim email. Periksa BREVO_API_KEY dan sender domain."
-          : "Layanan email belum dapat mengirim kode reset. Periksa konfigurasi SMTP Brevo.";
+      const message = getMailErrorMessage(error);
 
       return NextResponse.json({ message }, { status: 503 });
     }
@@ -108,6 +104,29 @@ export async function POST(req: Request) {
 
 function createResetCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function getMailErrorMessage(error: MailDeliveryError) {
+  const code = error.code?.toLowerCase() || "";
+  const providerMessage = error.providerMessage?.toLowerCase() || "";
+
+  if (error.code === "EAUTH" || error.responseCode === 535) {
+    return "SMTP Brevo belum valid. Periksa SMTP_USER, SMTP_PASS, lalu redeploy Vercel.";
+  }
+
+  if (error.responseCode === 401 || error.responseCode === 403 || code.includes("unauthorized") || code.includes("permission")) {
+    return "BREVO_API_KEY belum valid atau belum punya akses transactional email. Periksa API key v3 Brevo lalu redeploy Vercel.";
+  }
+
+  if (providerMessage.includes("sender") || providerMessage.includes("from") || providerMessage.includes("domain")) {
+    return "Email pengirim belum valid di Brevo. Periksa SMTP_FROM dan pastikan sender/domain sudah verified.";
+  }
+
+  if (error.responseCode === 400 || code.includes("invalid")) {
+    return "Data email belum valid. Periksa SMTP_FROM dan email akun user.";
+  }
+
+  return "Brevo belum dapat mengirim kode reset. Periksa API key, sender/domain, dan log Vercel.";
 }
 
 function maskEmail(email: string) {

@@ -11,6 +11,7 @@ export class MailDeliveryError extends Error {
   code?: string;
   command?: string;
   responseCode?: number;
+  providerMessage?: string;
 
   constructor(error: unknown) {
     super("Email reset password belum dapat dikirim.");
@@ -20,6 +21,7 @@ export class MailDeliveryError extends Error {
       if ("code" in error && typeof error.code === "string") this.code = error.code;
       if ("command" in error && typeof error.command === "string") this.command = error.command;
       if ("responseCode" in error && typeof error.responseCode === "number") this.responseCode = error.responseCode;
+      if ("message" in error && typeof error.message === "string") this.providerMessage = error.message;
     }
   }
 }
@@ -140,7 +142,8 @@ async function sendViaBrevoApi({
     const data = await response.json().catch(() => ({}));
     throw new MailDeliveryError({
       code: typeof data.code === "string" ? data.code : `BREVO_API_${response.status}`,
-      responseCode: response.status
+      responseCode: response.status,
+      message: typeof data.message === "string" ? data.message : ""
     });
   }
 }
