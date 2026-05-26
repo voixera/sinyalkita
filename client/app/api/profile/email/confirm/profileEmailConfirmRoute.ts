@@ -30,10 +30,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Profil tidak ditemukan." }, { status: 404 });
     }
 
-    if (!user.email) {
-      return NextResponse.json({ message: "Email lama belum tersedia untuk diverifikasi." }, { status: 400 });
-    }
-
     const existing = await prisma.user.findUnique({ where: { email: newEmail }, select: { id: true } });
     if (existing && existing.id !== user.id) {
       return NextResponse.json({ message: "Email tersebut sudah digunakan akun lain." }, { status: 409 });
@@ -42,7 +38,7 @@ export async function POST(req: NextRequest) {
     const verification = await validateEmailVerificationCode({
       userId: user.id,
       targetEmail: newEmail,
-      currentEmail: user.email,
+      currentEmail: user.email || undefined,
       purpose: "PROFILE_EMAIL_CHANGE",
       code: payload.code
     });
@@ -64,27 +60,35 @@ export async function POST(req: NextRequest) {
           phone: true,
           address: true,
           serverName: true,
-          role: true,
-          profileImage: true
+          role: true
         }
       });
 
-      await tx.emailVerificationCode.update({
-        where: { id: verification.id },
-        data: { usedAt: new Date() }
-      });
+      if (verification.storage === "emailVerification") {
+        await tx.emailVerificationCode.update({
+          where: { id: verification.id },
+          data: { usedAt: new Date() }
+        });
+      } else {
+        await tx.passwordResetCode.update({
+          where: { id: verification.id },
+          data: { usedAt: new Date() }
+        });
+      }
 
-      await tx.emailVerificationCode.updateMany({
-        where: {
-          userId: user.id,
-          purpose: "PROFILE_EMAIL_CHANGE",
-          usedAt: null,
-          id: { not: verification.id }
-        },
-        data: { usedAt: new Date() }
-      });
+      if (verification.storage === "emailVerification") {
+        await tx.emailVerificationCode.updateMany({
+          where: {
+            userId: user.id,
+            purpose: "PROFILE_EMAIL_CHANGE",
+            usedAt: null,
+            id: { not: verification.id }
+          },
+          data: { usedAt: new Date() }
+        });
+      }
 
-      return updated;
+      return { ...updated, profileImage: null };
     });
 
     return NextResponse.json({ message: "Email profil berhasil diperbarui.", profile });

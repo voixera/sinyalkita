@@ -30,14 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Profil tidak ditemukan." }, { status: 404 });
     }
 
-    if (!user.email) {
-      return NextResponse.json(
-        { message: "Akun ini belum memiliki email terhubung. Hubungi admin SinyalKita." },
-        { status: 400 }
-      );
-    }
-
-    if (normalizeEmail(user.email) === newEmail) {
+    if (user.email && normalizeEmail(user.email) === newEmail) {
       return NextResponse.json({ message: "Email baru masih sama dengan email saat ini." }, { status: 400 });
     }
 
@@ -49,17 +42,21 @@ export async function POST(req: NextRequest) {
     const result = await issueEmailVerificationCode({
       userId: user.id,
       targetEmail: newEmail,
-      currentEmail: user.email,
-      sendTo: user.email,
+      currentEmail: user.email || undefined,
+      sendTo: user.email || newEmail,
       name: user.name,
       purpose: "PROFILE_EMAIL_CHANGE",
-      title: "Konfirmasi perubahan email",
-      intro: `kami menerima permintaan untuk mengganti email akun Anda menjadi ${newEmail}.`,
-      note: "Masukkan kode ini di halaman pengaturan profil untuk menyelesaikan perubahan email."
+      title: user.email ? "Konfirmasi perubahan email" : "Hubungkan email akun",
+      intro: user.email
+        ? `kami menerima permintaan untuk mengganti email akun Anda menjadi ${newEmail}.`
+        : `kami menerima permintaan untuk menghubungkan email ini ke akun SinyalKita Anda.`,
+      note: user.email
+        ? "Masukkan kode ini di halaman pengaturan profil untuk menyelesaikan perubahan email."
+        : "Masukkan kode ini di halaman pengaturan profil untuk menghubungkan email baru."
     });
 
     return NextResponse.json({
-      message: "Kode verifikasi dikirim ke email yang sedang terhubung.",
+      message: user.email ? "Kode verifikasi dikirim ke email yang sedang terhubung." : "Kode verifikasi dikirim ke email baru.",
       email: result.email,
       expiresInMinutes: result.expiresInMinutes
     });

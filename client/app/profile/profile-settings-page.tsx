@@ -160,7 +160,9 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
               </div>
               <div>
                 <h2 className="font-heading text-lg font-bold text-ink sm:text-xl">Email terhubung</h2>
-                <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">Kode dikirim ke email lama sebelum perubahan disimpan.</p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">
+                  {profile.email ? "Kode dikirim ke email lama sebelum perubahan disimpan." : "Kode dikirim ke email baru untuk menghubungkan akun."}
+                </p>
               </div>
             </div>
 
