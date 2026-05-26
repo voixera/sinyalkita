@@ -27,6 +27,8 @@ export default function DashboardPage() {
       : serverStatus === "TROUBLE"
         ? "WiFi sedang gangguan"
         : "WiFi sedang error";
+  const connectionSummaryText =
+    serverStatus === "ACTIVE" ? "Stabil" : serverStatus === "TROUBLE" ? "Perlu dicek" : "Butuh bantuan admin";
   const serverStatusDescription =
     serverStatus === "ACTIVE"
       ? "Server layanan kamu berjalan normal."
@@ -53,7 +55,6 @@ export default function DashboardPage() {
                 Selamat datang kembali, {data.user.name.split(" ")[0]}
               </h1>
             </div>
-            <StatusBadge status={data.subscription.status} />
           </div>
 
           <div className="grid gap-5">
@@ -70,7 +71,7 @@ export default function DashboardPage() {
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Info icon={Gauge} label="Kecepatan" value={`${data.subscription.package.speedMbps} Mbps`} />
                 <Info icon={CalendarDays} label="Mulai layanan" value={formatDate(data.subscription.startedAt)} />
-                <Info icon={Signal} label="Status" value={serverStatusText} />
+                <Info icon={Signal} label="Koneksi" value={connectionSummaryText} />
               </div>
             </section>
           </div>
