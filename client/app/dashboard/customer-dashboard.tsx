@@ -23,7 +23,7 @@ export default function DashboardPage() {
   const serverStatus = data?.server?.status || "ACTIVE";
   const serverStatusText =
     serverStatus === "ACTIVE"
-      ? "WiFi aktif dan normal"
+      ? "WiFi normal"
       : serverStatus === "TROUBLE"
         ? "WiFi sedang gangguan"
         : "WiFi sedang error";
@@ -60,7 +60,7 @@ export default function DashboardPage() {
             <section className="mobile-card rounded-xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-bold text-ink-soft">Paket aktif</p>
+                  <p className="text-sm font-bold text-ink-soft">Paket layanan</p>
                   <h2 className="mt-2 font-heading text-2xl font-bold text-ink">{data.subscription.package.name}</h2>
                 </div>
                 <div className="grid h-12 w-12 place-items-center rounded-xl bg-success-soft text-success">
@@ -69,7 +69,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Info icon={Gauge} label="Kecepatan" value={`${data.subscription.package.speedMbps} Mbps`} />
-                <Info icon={CalendarDays} label="Aktif sejak" value={formatDate(data.subscription.startedAt)} />
+                <Info icon={CalendarDays} label="Mulai layanan" value={formatDate(data.subscription.startedAt)} />
                 <Info icon={Signal} label="Status" value={serverStatusText} />
               </div>
             </section>
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                   <p className="mt-1 text-sm font-semibold leading-6 text-ink-soft">{serverStatusDescription}</p>
                 </div>
               </div>
-              <StatusBadge status={serverStatus} />
+              {serverStatus !== "ACTIVE" ? <StatusBadge status={serverStatus} /> : null}
             </div>
           </section>
 
