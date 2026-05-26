@@ -142,7 +142,7 @@ export default function GenerateAccountPage() {
                 </div>
               </label>
               <Field name="phone" label="Nomor WhatsApp" placeholder="0812..." />
-              <Field name="email" label="Email opsional" placeholder="nama@email.com" type="email" required={false} />
+              <Field name="email" label="Email" placeholder="nama@email.com" type="email" />
               <label className="block text-sm font-bold text-ink">
                 Server
                 <select

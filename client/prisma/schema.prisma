@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -43,23 +43,24 @@ enum ServerStatus {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  customerId   String         @unique
-  loginId      String         @unique
-  name         String
-  email        String?        @unique
-  passwordHash String
-  phone        String
-  address      String
-  serverName   String         @default("Server Jombok")
-  role         Role           @default(CUSTOMER)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  subscription Subscription?
-  billings     Billing[]
-  payments     Payment[]
-  generatedAccount GeneratedAccount?
-  troubleReports TroubleReport[]
+  id                 String              @id @default(cuid())
+  customerId         String              @unique
+  loginId            String              @unique
+  name               String
+  email              String?             @unique
+  passwordHash       String
+  phone              String
+  address            String
+  serverName         String              @default("Server Jombok")
+  role               Role                @default(CUSTOMER)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  subscription       Subscription?
+  billings           Billing[]
+  payments           Payment[]
+  generatedAccount   GeneratedAccount?
+  troubleReports     TroubleReport[]
+  passwordResetCodes PasswordResetCode[]
 }
 
 model ServiceServer {
@@ -72,23 +73,23 @@ model ServiceServer {
 }
 
 model Package {
-  id           String         @id @default(cuid())
-  name         String
-  speedMbps    Int
-  monthlyPrice Int
-  description  String
-  createdAt    DateTime       @default(now())
+  id            String         @id @default(cuid())
+  name          String
+  speedMbps     Int
+  monthlyPrice  Int
+  description   String
+  createdAt     DateTime       @default(now())
   subscriptions Subscription[]
 }
 
 model Subscription {
-  id         String        @id @default(cuid())
-  userId     String        @unique
-  packageId  String
-  status     ServiceStatus @default(ACTIVE)
-  startedAt  DateTime
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  package    Package       @relation(fields: [packageId], references: [id])
+  id        String        @id @default(cuid())
+  userId    String        @unique
+  packageId String
+  status    ServiceStatus @default(ACTIVE)
+  startedAt DateTime
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package   Package       @relation(fields: [packageId], references: [id])
 }
 
 model Billing {
@@ -107,19 +108,19 @@ model Billing {
 }
 
 model Payment {
-  id        String        @id @default(cuid())
-  userId    String
-  billingId String
-  method    String
-  amount    Int
-  status    PaymentStatus @default(SUCCESS)
-  reference String        @unique
-  proofImage String?
-  proofName  String?
+  id              String        @id @default(cuid())
+  userId          String
+  billingId       String
+  method          String
+  amount          Int
+  status          PaymentStatus @default(SUCCESS)
+  reference       String        @unique
+  proofImage      String?
+  proofName       String?
   proofUploadedAt DateTime?
-  paidAt    DateTime      @default(now())
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  billing   Billing       @relation(fields: [billingId], references: [id], onDelete: Cascade)
+  paidAt          DateTime      @default(now())
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billing         Billing       @relation(fields: [billingId], references: [id], onDelete: Cascade)
 
   @@index([userId, paidAt])
 }
@@ -138,14 +139,27 @@ model GeneratedAccount {
 }
 
 model TroubleReport {
-  id        String       @id @default(cuid())
-  userId    String
-  message   String
-  status    ReportStatus @default(OPEN)
-  createdAt DateTime     @default(now())
+  id         String       @id @default(cuid())
+  userId     String
+  message    String
+  status     ReportStatus @default(OPEN)
+  createdAt  DateTime     @default(now())
   resolvedAt DateTime?
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
   @@index([createdAt])
+}
+
+model PasswordResetCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }

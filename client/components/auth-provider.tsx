@@ -10,7 +10,7 @@ type AuthContextValue = {
   user: SessionUser | null;
   token: string | null;
   ready: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (loginId: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -39,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       token,
       ready,
-      login: async (email: string, password: string) => {
-        const data = await api.login(email, password);
+      login: async (loginId: string, password: string) => {
+        const data = await api.login(loginId, password);
         localStorage.setItem("sinyalkita_token", data.token);
         localStorage.setItem("sinyalkita_user", JSON.stringify(data.user));
         setToken(data.token);

@@ -13,7 +13,7 @@ const createCustomerSchema = z.object({
   address: z.string().min(8),
   serverName: z.enum(["Server Jombok", "Server Kepung", "Server Pare"]).default("Server Jombok"),
   packageId: z.string().optional(),
-  email: z.string().email().optional().or(z.literal(""))
+  email: z.string().trim().toLowerCase().email()
 });
 
 const serverPrices: Record<string, number> = {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
           customerId: identity.customerId,
           loginId: identity.loginId,
           name: payload.name,
-          email: payload.email || null,
+          email: payload.email,
           passwordHash,
           phone: payload.phone,
           address: payload.address,

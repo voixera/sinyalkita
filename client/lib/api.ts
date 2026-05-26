@@ -36,6 +36,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ loginId, password })
     }),
+  requestPasswordReset: (identifier: string) =>
+    request<{ message: string; email?: string; expiresInMinutes: number }>("/auth/password-reset/request", {
+      method: "POST",
+      body: JSON.stringify({ identifier })
+    }),
+  confirmPasswordReset: (payload: { identifier: string; code: string; password: string }) =>
+    request<{ message: string }>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   me: () => request<MeResponse>("/customers/me"),
   billings: () => request<{ billings: Billing[] }>("/billings"),
   payments: () => request<{ payments: Payment[] }>("/payments"),
@@ -123,7 +133,7 @@ export const api = {
     address: string;
     serverName: string;
     packageId: string;
-    email?: string;
+    email: string;
     monthlyAmount?: number;
   }) =>
     request<{
