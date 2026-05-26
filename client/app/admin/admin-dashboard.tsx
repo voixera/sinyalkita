@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, AlertTriangle, BarChart3, ChevronDown, Server, UsersRound, WalletCards } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
@@ -177,7 +177,9 @@ function OperationalChart({
   walletFilter: string;
   onWalletFilterChange: (value: string) => void;
 }) {
-  const width = 760;
+  const chartFrameRef = useRef<HTMLDivElement>(null);
+  const [desktopChartWidth, setDesktopChartWidth] = useState(760);
+  const width = desktopChartWidth;
   const height = 320;
   const padding = { top: 30, right: 28, bottom: 54, left: 76 };
   const chartWidth = width - padding.left - padding.right;
@@ -196,6 +198,29 @@ function OperationalChart({
   const currentRevenue = points.reduce((total, point) => total + point.visibleRevenue, 0);
   const currentPending = points.reduce((total, point) => total + point.pending, 0);
   const totalReports = points.reduce((total, point) => total + point.reports, 0);
+
+  useEffect(() => {
+    const chartFrame = chartFrameRef.current;
+    if (!chartFrame) return;
+
+    const updateChartWidth = () => {
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      const measuredWidth = Math.round(chartFrame.getBoundingClientRect().width);
+      const nextWidth = isDesktop && measuredWidth > 0 ? measuredWidth : 760;
+      setDesktopChartWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
+    };
+
+    updateChartWidth();
+
+    const resizeObserver = new ResizeObserver(updateChartWidth);
+    resizeObserver.observe(chartFrame);
+    window.addEventListener("resize", updateChartWidth);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateChartWidth);
+    };
+  }, []);
 
   return (
     <div className="overflow-hidden rounded-xl border border-line/80 bg-white shadow-soft">
@@ -238,7 +263,7 @@ function OperationalChart({
       </div>
 
       <div className="p-3 sm:p-5">
-        <div className="overflow-hidden rounded-lg border border-line/80 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+        <div ref={chartFrameRef} className="overflow-hidden rounded-lg border border-line/80 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
           <svg viewBox={`0 0 ${width} ${height}`} className="block h-[320px] w-full" role="img" aria-label="Grafik operasional mingguan admin">
             <defs>
               <linearGradient id="chartRevenueStroke" x1="0" x2="1" y1="0" y2="0">
