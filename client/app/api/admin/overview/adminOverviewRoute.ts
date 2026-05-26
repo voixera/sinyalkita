@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
     const users = await prisma.user.findMany({
       where: { role: "CUSTOMER" },
       orderBy: { name: "asc" },
-      include: {
+      select: {
+        customerId: true,
+        loginId: true,
+        name: true,
         subscription: { include: { package: true } },
         billings: { orderBy: { period: "desc" }, take: 1 }
       }

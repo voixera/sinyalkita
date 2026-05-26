@@ -14,7 +14,16 @@ const loginSchema = z.object({
 export async function POST(req: Request) {
   try {
     const payload = loginSchema.parse(await req.json());
-    const user = await prisma.user.findUnique({ where: { loginId: payload.loginId } });
+    const user = await prisma.user.findUnique({
+      where: { loginId: payload.loginId },
+      select: {
+        id: true,
+        name: true,
+        loginId: true,
+        passwordHash: true,
+        role: true
+      }
+    });
 
     if (!user) {
       return NextResponse.json({ message: "ID login atau kata sandi belum sesuai." }, { status: 401 });
