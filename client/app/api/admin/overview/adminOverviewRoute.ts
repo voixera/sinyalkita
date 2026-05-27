@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
+import { ACTIVE_REPORT_STATUSES, ensureAcceptedReportStatus } from "@/lib/server/report-status";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,8 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req, "ADMIN");
     if (auth.error) return auth.error;
+
+    await ensureAcceptedReportStatus();
 
     const start = startOfDay(startOfWeek(new Date()));
     const end = addDays(start, 7);
@@ -19,14 +22,22 @@ export async function GET(req: NextRequest) {
           customerId: true,
           loginId: true,
           name: true,
-          profileImage: true,
           serverName: true,
-          subscription: { include: { package: true } },
-          billings: { orderBy: { period: "desc" }, take: 1 }
+          subscription: {
+            select: {
+              status: true,
+              package: { select: { name: true } }
+            }
+          },
+          billings: {
+            orderBy: { period: "desc" },
+            take: 1,
+            select: { status: true, amount: true }
+          }
         }
       }),
       prisma.payment.count({ where: { status: "PENDING" } }),
-      prisma.troubleReport.count({ where: { status: { in: ["OPEN", "ACCEPTED"] } } }),
+      prisma.troubleReport.count({ where: { status: { in: [...ACTIVE_REPORT_STATUSES] } } }),
       prisma.payment.findMany({
         where: { paidAt: { gte: start, lt: end } },
         select: { amount: true, method: true, paidAt: true, status: true }
@@ -45,7 +56,7 @@ export async function GET(req: NextRequest) {
       customerId: user.customerId,
       loginId: user.loginId,
       name: user.name,
-      profileImage: user.profileImage,
+      profileImage: null,
       serverName: user.serverName,
       packageName: user.subscription?.package.name || "-",
       serviceStatus: user.subscription?.status || "SUSPENDED",

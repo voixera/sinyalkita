@@ -58,6 +58,14 @@ async function request<T>(path: string, options: RequestInit = {}) {
 
       return data as T;
     })
+    .catch((error) => {
+      if (cacheable && !(error instanceof ApiError && (error.status === 401 || error.status === 403))) {
+        const stale = readApiCache<T>(cacheKey, true);
+        if (stale) return stale;
+      }
+
+      throw error;
+    })
     .finally(() => {
       if (cacheable) inflightRequests.delete(cacheKey);
     });
@@ -89,10 +97,12 @@ function createCacheKey(path: string, token: string | null) {
   return `${API_CACHE_PREFIX}${tokenPart}:GET:${path}`;
 }
 
-function readApiCache<T>(cacheKey: string) {
+function readApiCache<T>(cacheKey: string, allowExpired = false) {
   const now = Date.now();
   const memoryEntry = memoryCache.get(cacheKey) as CacheEntry<T> | undefined;
-  if (memoryEntry && memoryEntry.expiresAt > now) return memoryEntry.data;
+  if (memoryEntry) {
+    if (allowExpired || memoryEntry.expiresAt > now) return memoryEntry.data;
+  }
 
   if (typeof window === "undefined") return null;
 
@@ -100,9 +110,8 @@ function readApiCache<T>(cacheKey: string) {
     const stored = sessionStorage.getItem(cacheKey);
     if (!stored) return null;
     const parsed = JSON.parse(stored) as CacheEntry<T>;
-    if (!parsed || parsed.expiresAt <= now) {
-      sessionStorage.removeItem(cacheKey);
-      memoryCache.delete(cacheKey);
+    if (!parsed) return null;
+    if (!allowExpired && parsed.expiresAt <= now) {
       return null;
     }
     memoryCache.set(cacheKey, parsed);
@@ -217,6 +226,10 @@ export const api = {
         }>;
       };
     }>("/admin/overview"),
+  adminProfileImages: () =>
+    request<{
+      profileImages: Record<string, string | null>;
+    }>("/admin/profile-images"),
   adminSummary: () =>
     request<{
       summary: {

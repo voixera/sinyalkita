@@ -4,8 +4,8 @@ import { Activity, AlertTriangle, BarChart3, ChevronDown, Search, Server, UsersR
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
-import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
-import { api } from "@/lib/api";
+import { SkeletonBlock, StatusBadge } from "@/components/ui";
+import { ApiError, api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { getProfileInitials } from "@/lib/profile-photo";
 import type { ServiceServer } from "@/lib/types";
@@ -60,21 +60,52 @@ export default function AdminPage() {
     pendingPayments: 0,
     openReports: 0
   });
-  const [error, setError] = useState("");
-  const { ready, user } = useAuth();
+  const { logout, ready, user } = useAuth();
 
-  const loadOperationalData = useCallback(async () => {
+  const loadCustomerProfileImages = useCallback(async () => {
     try {
-      const [overview, serverData] = await Promise.all([api.adminOverview(), api.adminServers()]);
-      setCustomers(overview.customers);
-      setOperational(overview.operational);
-      setServers(serverData.servers);
-      setSummary(overview.summary);
-      setError("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Data admin belum dapat dimuat.");
+      const data = await api.adminProfileImages();
+      setCustomers((current) =>
+        current?.map((customer) => ({
+          ...customer,
+          profileImage: data.profileImages[customer.customerId] ?? customer.profileImage
+        })) || current
+      );
+    } catch (error) {
+      console.error("Admin profile images failed", error);
     }
   }, []);
+
+  const loadOperationalData = useCallback(async () => {
+    const [overviewResult, serverResult] = await Promise.allSettled([api.adminOverview(), api.adminServers()]);
+
+    if (isAuthError(overviewResult) || isAuthError(serverResult)) {
+      logout();
+      return;
+    }
+
+    if (overviewResult.status === "fulfilled") {
+      setCustomers(overviewResult.value.customers);
+      setOperational(overviewResult.value.operational);
+      setSummary(overviewResult.value.summary);
+
+      if (overviewResult.value.customers.length > 0) {
+        void loadCustomerProfileImages();
+      }
+    } else {
+      console.error("Admin overview failed", overviewResult.reason);
+      setCustomers([]);
+      setOperational(createEmptyOperational());
+      setSummary(createEmptySummary());
+    }
+
+    if (serverResult.status === "fulfilled") {
+      setServers(serverResult.value.servers);
+    } else {
+      console.error("Admin servers failed", serverResult.reason);
+      setServers([]);
+    }
+  }, [loadCustomerProfileImages, logout]);
 
   useEffect(() => {
     if (!ready || user?.role !== "ADMIN") return;
@@ -150,9 +181,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {error ? (
-        <ErrorState title="Panel admin belum dapat dimuat" message={error} />
-      ) : !customers || !servers || !operational ? (
+      {!customers || !servers || !operational ? (
         <SkeletonBlock className="h-96" />
       ) : (
         <div className="grid gap-5">
@@ -235,6 +264,41 @@ export default function AdminPage() {
       )}
     </AppShell>
   );
+}
+
+function isAuthError(result: PromiseSettledResult<unknown>) {
+  return result.status === "rejected" && result.reason instanceof ApiError && (result.reason.status === 401 || result.reason.status === 403);
+}
+
+function createEmptySummary(): Summary {
+  return {
+    totalCustomers: 0,
+    activeCustomers: 0,
+    unpaidBillings: 0,
+    pendingPayments: 0,
+    openReports: 0
+  };
+}
+
+function createEmptyOperational(): Operational {
+  const start = startOfWeek(new Date());
+
+  return {
+    rangeLabel: `${formatShortDate(start)} - ${formatShortDate(addDays(start, 6))}`,
+    methods: [],
+    points: Array.from({ length: 7 }, (_, index) => {
+      const date = addDays(start, index);
+
+      return {
+        date: date.toISOString().slice(0, 10),
+        label: formatShortDate(date),
+        revenue: 0,
+        pending: 0,
+        reports: 0,
+        paymentsByMethod: {}
+      };
+    })
+  };
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof UsersRound; label: string; value: string }) {
@@ -466,6 +530,24 @@ function formatCompact(value: number) {
   if (value >= 1000000) return `${Math.round(value / 1000000)}jt`;
   if (value >= 1000) return `${Math.round(value / 1000)}rb`;
   return String(Math.round(value));
+}
+
+function startOfWeek(date: Date) {
+  const next = new Date(date);
+  const day = next.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  next.setDate(next.getDate() + mondayOffset);
+  return next;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(date.getDate() + days);
+  return next;
+}
+
+function formatShortDate(date: Date) {
+  return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
 }
 
 function smoothLinePath(points: Array<[number, number]>) {

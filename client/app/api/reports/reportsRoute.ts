@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { sendAdminReportNotificationEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
+import { ACTIVE_REPORT_STATUSES, ensureAcceptedReportStatus } from "@/lib/server/report-status";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,10 @@ export async function POST(req: NextRequest) {
     const auth = await requireAuth(req, "CUSTOMER");
     if (auth.error) return auth.error;
 
+    await ensureAcceptedReportStatus();
+
     const existingOpen = await prisma.troubleReport.findFirst({
-      where: { userId: auth.user.id, status: { in: ["OPEN", "ACCEPTED"] } }
+      where: { userId: auth.user.id, status: { in: [...ACTIVE_REPORT_STATUSES] } }
     });
 
     if (existingOpen) {

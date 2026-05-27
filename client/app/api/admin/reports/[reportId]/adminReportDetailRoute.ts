@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { sendReportCheckingEmail, sendReportFixedEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
+import { ensureAcceptedReportStatus } from "@/lib/server/report-status";
 
 export const dynamic = "force-dynamic";
 
@@ -10,17 +11,13 @@ const updateSchema = z.object({
   status: z.enum(["ACCEPTED", "RESOLVED"])
 });
 
-let acceptedReportStatusReady = false;
-
 export async function PATCH(req: NextRequest, { params }: { params: { reportId: string } }) {
   try {
     const auth = await requireAuth(req, "ADMIN");
     if (auth.error) return auth.error;
 
     const payload = updateSchema.parse(await req.json());
-    if (payload.status === "ACCEPTED") {
-      await ensureAcceptedReportStatus();
-    }
+    await ensureAcceptedReportStatus();
 
     const report = await prisma.troubleReport.update({
       where: { id: params.reportId },
@@ -50,11 +47,4 @@ export async function PATCH(req: NextRequest, { params }: { params: { reportId: 
   } catch (error) {
     return apiError(error);
   }
-}
-
-async function ensureAcceptedReportStatus() {
-  if (acceptedReportStatusReady) return;
-
-  await prisma.$executeRawUnsafe(`ALTER TYPE "ReportStatus" ADD VALUE IF NOT EXISTS 'ACCEPTED'`);
-  acceptedReportStatusReady = true;
 }

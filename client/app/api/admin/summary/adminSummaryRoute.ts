@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
+import { ACTIVE_REPORT_STATUSES, ensureAcceptedReportStatus } from "@/lib/server/report-status";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +10,11 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req, "ADMIN");
     if (auth.error) return auth.error;
 
+    await ensureAcceptedReportStatus();
+
     const [pendingPayments, openReports] = await Promise.all([
       prisma.payment.count({ where: { status: "PENDING" } }),
-      prisma.troubleReport.count({ where: { status: { in: ["OPEN", "ACCEPTED"] } } })
+      prisma.troubleReport.count({ where: { status: { in: [...ACTIVE_REPORT_STATUSES] } } })
     ]);
 
     return NextResponse.json({

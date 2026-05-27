@@ -93,7 +93,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
     };
 
     if (admin) {
-      if (href === "/admin") run([api.adminOverview(), api.adminServers(), api.profile()]);
+      if (href === "/admin") run([api.adminOverview(), api.adminServers()]);
       if (href === "/admin/servers") run([api.adminServers()]);
       if (href === "/admin/payments") run([api.adminPendingPayments()]);
       if (href === "/admin/reports") run([api.adminReports()]);
