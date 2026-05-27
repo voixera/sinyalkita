@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
-import { readProfileImages } from "@/lib/server/profile-image";
 
 export const dynamic = "force-dynamic";
 
@@ -10,35 +9,22 @@ export async function GET(req: NextRequest) {
     const auth = await requireAuth(req, "ADMIN");
     if (auth.error) return auth.error;
 
-    const users = await prisma.user.findMany({
-      where: { role: "CUSTOMER" },
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        customerId: true,
-        loginId: true,
-        name: true,
-        subscription: { include: { package: true } },
-        billings: { orderBy: { period: "desc" }, take: 1 }
-      }
-    });
-    const profileImages = await readProfileImages(users.map((user) => user.id));
-
-    const customers = users.map((user) => ({
-      customerId: user.customerId,
-      loginId: user.loginId,
-      name: user.name,
-      profileImage: profileImages.get(user.id) || null,
-      packageName: user.subscription?.package.name || "-",
-      serviceStatus: user.subscription?.status || "SUSPENDED",
-      billingStatus: user.billings[0]?.status || "UNPAID",
-      amount: user.billings[0]?.amount || 0
-    }));
-    const pendingPayments = await prisma.payment.count({ where: { status: "PENDING" } });
-    const openReports = await prisma.troubleReport.count({ where: { status: "OPEN" } });
     const start = startOfDay(startOfWeek(new Date()));
     const end = addDays(start, 7);
-    const [payments, billings, reports] = await Promise.all([
+    const [users, pendingPayments, openReports, payments, billings, reports] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: "CUSTOMER" },
+        orderBy: { name: "asc" },
+        select: {
+          customerId: true,
+          loginId: true,
+          name: true,
+          subscription: { include: { package: true } },
+          billings: { orderBy: { period: "desc" }, take: 1 }
+        }
+      }),
+      prisma.payment.count({ where: { status: "PENDING" } }),
+      prisma.troubleReport.count({ where: { status: "OPEN" } }),
       prisma.payment.findMany({
         where: { paidAt: { gte: start, lt: end } },
         select: { amount: true, method: true, paidAt: true, status: true }
@@ -53,23 +39,53 @@ export async function GET(req: NextRequest) {
       })
     ]);
 
+    const customers = users.map((user) => ({
+      customerId: user.customerId,
+      loginId: user.loginId,
+      name: user.name,
+      profileImage: null,
+      packageName: user.subscription?.package.name || "-",
+      serviceStatus: user.subscription?.status || "SUSPENDED",
+      billingStatus: user.billings[0]?.status || "UNPAID",
+      amount: user.billings[0]?.amount || 0
+    }));
+
     const methods = Array.from(new Set(payments.map((payment) => payment.method))).sort();
+    const paidByDate = new Map<string, { revenue: number; paymentsByMethod: Record<string, number> }>();
+    const pendingByDate = new Map<string, number>();
+    const reportsByDate = new Map<string, number>();
+
+    payments.forEach((payment) => {
+      if (payment.status !== "SUCCESS") return;
+      const key = dateKey(payment.paidAt);
+      const current = paidByDate.get(key) || { revenue: 0, paymentsByMethod: {} };
+      current.revenue += payment.amount;
+      current.paymentsByMethod[payment.method] = (current.paymentsByMethod[payment.method] || 0) + payment.amount;
+      paidByDate.set(key, current);
+    });
+
+    billings.forEach((billing) => {
+      const key = dateKey(billing.dueDate);
+      pendingByDate.set(key, (pendingByDate.get(key) || 0) + billing.amount);
+    });
+
+    reports.forEach((report) => {
+      const key = dateKey(report.createdAt);
+      reportsByDate.set(key, (reportsByDate.get(key) || 0) + 1);
+    });
+
     const operational = Array.from({ length: 7 }, (_, index) => {
       const date = addDays(start, index);
       const key = dateKey(date);
-      const dailyPayments = payments.filter((payment) => dateKey(payment.paidAt) === key && payment.status === "SUCCESS");
-      const paymentsByMethod = dailyPayments.reduce<Record<string, number>>((acc, payment) => {
-        acc[payment.method] = (acc[payment.method] || 0) + payment.amount;
-        return acc;
-      }, {});
+      const dailyPaid = paidByDate.get(key);
 
       return {
         date: key,
         label: date.toLocaleDateString("id-ID", { day: "2-digit", month: "short" }),
-        revenue: dailyPayments.reduce((total, payment) => total + payment.amount, 0),
-        pending: billings.filter((billing) => dateKey(billing.dueDate) === key).reduce((total, billing) => total + billing.amount, 0),
-        reports: reports.filter((report) => dateKey(report.createdAt) === key).length,
-        paymentsByMethod
+        revenue: dailyPaid?.revenue || 0,
+        pending: pendingByDate.get(key) || 0,
+        reports: reportsByDate.get(key) || 0,
+        paymentsByMethod: dailyPaid?.paymentsByMethod || {}
       };
     });
 

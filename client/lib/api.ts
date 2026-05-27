@@ -1,6 +1,16 @@
 import type { Billing, MeResponse, Package, Payment, Role, ServerStatus, ServiceServer, TroubleReport, User } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_CACHE_PREFIX = "sinyalkita_api_cache:";
+const DEFAULT_GET_CACHE_TTL_MS = 45_000;
+
+type CacheEntry<T> = {
+  data: T;
+  expiresAt: number;
+};
+
+const memoryCache = new Map<string, CacheEntry<unknown>>();
+const inflightRequests = new Map<string, Promise<unknown>>();
 
 export class ApiError extends Error {
   status: number;
@@ -13,24 +23,119 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("sinyalkita_token") : null;
-  const response = await fetch(`${API_URL}${path}`, {
+  const method = String(options.method || "GET").toUpperCase();
+  const cacheable = method === "GET";
+  const cacheKey = cacheable ? createCacheKey(path, token) : "";
+
+  if (cacheable) {
+    const cached = readApiCache<T>(cacheKey);
+    if (cached) return cached;
+
+    const inflight = inflightRequests.get(cacheKey) as Promise<T> | undefined;
+    if (inflight) return inflight;
+  }
+
+  const requestPromise = fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers
     }
-  });
+  })
+    .then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = typeof data.message === "string" && data.message.trim() ? data.message : "Permintaan belum dapat diproses.";
+        throw new ApiError(message, response.status);
+      }
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = typeof data.message === "string" && data.message.trim() ? data.message : "Permintaan belum dapat diproses.";
-    throw new ApiError(message, response.status);
+      if (cacheable) {
+        writeApiCache(cacheKey, data);
+      } else {
+        clearApiCache();
+      }
+
+      return data as T;
+    })
+    .finally(() => {
+      if (cacheable) inflightRequests.delete(cacheKey);
+    });
+
+  if (cacheable) inflightRequests.set(cacheKey, requestPromise);
+  return requestPromise;
+}
+
+export function clearApiCache() {
+  memoryCache.clear();
+  inflightRequests.clear();
+
+  if (typeof window === "undefined") return;
+
+  try {
+    for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+      const key = sessionStorage.key(index);
+      if (key?.startsWith(API_CACHE_PREFIX)) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Cache is only a speed-up; private browsing/storage errors should not block the app.
   }
-  return data as T;
+}
+
+function createCacheKey(path: string, token: string | null) {
+  const tokenPart = token ? `${token.slice(0, 16)}:${token.slice(-10)}` : "guest";
+  return `${API_CACHE_PREFIX}${tokenPart}:GET:${path}`;
+}
+
+function readApiCache<T>(cacheKey: string) {
+  const now = Date.now();
+  const memoryEntry = memoryCache.get(cacheKey) as CacheEntry<T> | undefined;
+  if (memoryEntry && memoryEntry.expiresAt > now) return memoryEntry.data;
+
+  if (typeof window === "undefined") return null;
+
+  try {
+    const stored = sessionStorage.getItem(cacheKey);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as CacheEntry<T>;
+    if (!parsed || parsed.expiresAt <= now) {
+      sessionStorage.removeItem(cacheKey);
+      memoryCache.delete(cacheKey);
+      return null;
+    }
+    memoryCache.set(cacheKey, parsed);
+    return parsed.data;
+  } catch {
+    try {
+      sessionStorage.removeItem(cacheKey);
+    } catch {
+      // Ignore storage cleanup failures.
+    }
+    memoryCache.delete(cacheKey);
+    return null;
+  }
+}
+
+function writeApiCache<T>(cacheKey: string, data: T) {
+  const entry: CacheEntry<T> = {
+    data,
+    expiresAt: Date.now() + DEFAULT_GET_CACHE_TTL_MS
+  };
+  memoryCache.set(cacheKey, entry);
+
+  if (typeof window === "undefined") return;
+
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify(entry));
+  } catch {
+    // Large responses, like uploaded proof images, can exceed sessionStorage. Memory cache is enough then.
+  }
 }
 
 export const api = {
+  clearCache: clearApiCache,
   login: (loginId: string, password: string) =>
     request<{ token: string; user: { name: string; loginId: string; role: Role } }>("/auth/login", {
       method: "POST",
@@ -111,6 +216,13 @@ export const api = {
         }>;
       };
     }>("/admin/overview"),
+  adminSummary: () =>
+    request<{
+      summary: {
+        pendingPayments: number;
+        openReports: number;
+      };
+    }>("/admin/summary"),
   adminPendingPayments: () =>
     request<{
       payments: Array<Payment & { user: { customerId: string; name: string; loginId: string } }>;

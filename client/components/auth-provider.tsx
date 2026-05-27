@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ready,
       login: async (loginId: string, password: string) => {
         const data = await api.login(loginId, password);
+        api.clearCache();
         localStorage.setItem("sinyalkita_token", data.token);
         localStorage.setItem("sinyalkita_user", JSON.stringify(data.user));
         setToken(data.token);
@@ -48,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push(data.user.role === "ADMIN" ? "/admin" : "/dashboard");
       },
       logout: () => {
+        api.clearCache();
         localStorage.removeItem("sinyalkita_token");
         localStorage.removeItem("sinyalkita_user");
         setToken(null);

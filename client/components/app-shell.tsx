@@ -73,7 +73,7 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
     if (!ready || !admin || user?.role !== "ADMIN") return;
 
     api
-      .adminOverview()
+      .adminSummary()
       .then((data) =>
         setAdminBadges({
           pendingPayments: data.summary.pendingPayments,
@@ -84,6 +84,32 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
         setAdminBadges({ pendingPayments: 0, openReports: 0 });
       });
   }, [admin, ready, user?.role, pathname]);
+
+  function warmRouteData(href: string) {
+    if (!ready || !token || !user) return;
+
+    const run = (requests: Array<Promise<unknown>>) => {
+      void Promise.all(requests).catch(() => undefined);
+    };
+
+    if (admin) {
+      if (href === "/admin") run([api.adminOverview(), api.adminServers(), api.profile()]);
+      if (href === "/admin/servers") run([api.adminServers()]);
+      if (href === "/admin/payments") run([api.adminPendingPayments()]);
+      if (href === "/admin/reports") run([api.adminReports()]);
+      if (href === "/admin/generate") run([api.adminPackages()]);
+      if (href === "/admin/history") run([api.adminGeneratedAccounts()]);
+      if (href === "/admin/profile") run([api.profile()]);
+      return;
+    }
+
+    if (href === "/dashboard") run([api.me()]);
+    if (href === "/report-problem") run([api.me()]);
+    if (href === "/tagihan") run([api.billings()]);
+    if (href === "/pembayaran") run([api.me(), api.billings()]);
+    if (href === "/riwayat") run([api.payments()]);
+    if (href === "/profile") run([api.profile()]);
+  }
 
   if (blocked) {
     return (
@@ -121,6 +147,9 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
+                onFocus={() => warmRouteData(item.href)}
+                onMouseEnter={() => warmRouteData(item.href)}
+                onTouchStart={() => warmRouteData(item.href)}
                 className={clsx(
                   "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold",
                   active
@@ -172,6 +201,9 @@ export function AppShell({ children, admin = false }: { children: React.ReactNod
             <Link
               key={item.href}
               href={item.href}
+              onFocus={() => warmRouteData(item.href)}
+              onMouseEnter={() => warmRouteData(item.href)}
+              onTouchStart={() => warmRouteData(item.href)}
               className={clsx(
                 "mobile-bottom-nav-item mobile-tap flex flex-col items-center justify-center gap-1 font-bold",
                 active ? "bg-ink text-white shadow-soft" : "text-ink-soft"

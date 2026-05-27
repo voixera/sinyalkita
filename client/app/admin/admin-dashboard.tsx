@@ -62,16 +62,10 @@ export default function AdminPage() {
 
   const loadOperationalData = useCallback(async () => {
     try {
-      const [overview, serverData, profileData] = await Promise.all([api.adminOverview(), api.adminServers(), api.profile()]);
-      const profile = profileData.profile;
+      const [overview, serverData] = await Promise.all([api.adminOverview(), api.adminServers()]);
       setCustomers(overview.customers);
       setOperational(overview.operational);
       setServers(serverData.servers);
-      setAdminProfile({
-        name: profile.name,
-        loginId: profile.loginId,
-        profileImage: profile.profileImage || getStoredProfilePhoto(profile.loginId)
-      });
       setSummary(overview.summary);
       setError("");
     } catch (err) {
@@ -83,6 +77,23 @@ export default function AdminPage() {
     if (!ready || user?.role !== "ADMIN") return;
     loadOperationalData();
   }, [loadOperationalData, ready, user?.role]);
+
+  useEffect(() => {
+    if (!ready || user?.role !== "ADMIN") return;
+    if (adminProfile) return;
+
+    api
+      .profile()
+      .then((profileData) => {
+        const profile = profileData.profile;
+        setAdminProfile({
+          name: profile.name,
+          loginId: profile.loginId,
+          profileImage: profile.profileImage || getStoredProfilePhoto(profile.loginId)
+        });
+      })
+      .catch(() => undefined);
+  }, [adminProfile, ready, user?.role]);
 
   const serverIssues = (servers || []).filter((server) => server.status !== "ACTIVE").length;
   const chartPoints = useMemo(() => {
