@@ -12,21 +12,18 @@ const confirmPasswordSchema = z.object({
   password: z.string().min(6).max(72)
 });
 
+type PasswordCodeRecord = {
+  id: string;
+  codeHash: string;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
     if (auth.error) return auth.error;
 
     const payload = confirmPasswordSchema.parse(await req.json());
-    const resetCodes = await prisma.passwordResetCode.findMany({
-      where: {
-        userId: auth.user.id,
-        usedAt: null,
-        expiresAt: { gt: new Date() }
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10
-    });
+    const resetCodes = await findActivePasswordCodes(auth.user.id);
 
     if (resetCodes.length === 0) {
       return invalidCodeResponse();
@@ -46,26 +43,13 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(payload.password, 10);
-    const now = new Date();
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: auth.user.id },
-        data: { passwordHash }
-      }),
-      prisma.passwordResetCode.update({
-        where: { id: matchedCodeId },
-        data: { usedAt: now }
-      }),
-      prisma.passwordResetCode.updateMany({
-        where: {
-          userId: auth.user.id,
-          usedAt: null,
-          id: { not: matchedCodeId }
-        },
-        data: { usedAt: now }
-      })
-    ]);
+    await prisma.user.update({
+      where: { id: auth.user.id },
+      data: { passwordHash }
+    });
+
+    await cleanupPasswordCodes(auth.user.id);
 
     return NextResponse.json({ message: "Password berhasil diperbarui." });
   } catch (error) {
@@ -75,4 +59,46 @@ export async function POST(req: NextRequest) {
 
 function invalidCodeResponse() {
   return NextResponse.json({ message: "Kode verifikasi belum sesuai atau sudah kedaluwarsa." }, { status: 400 });
+}
+
+async function findActivePasswordCodes(userId: string): Promise<PasswordCodeRecord[]> {
+  try {
+    return await prisma.passwordResetCode.findMany({
+      where: {
+        userId,
+        usedAt: null,
+        expiresAt: { gt: new Date() }
+      },
+      select: { id: true, codeHash: true },
+      orderBy: { createdAt: "desc" },
+      take: 10
+    });
+  } catch (error) {
+    if (!isMissingUsedAtColumn(error)) throw error;
+
+    return prisma.passwordResetCode.findMany({
+      where: {
+        userId,
+        expiresAt: { gt: new Date() }
+      },
+      select: { id: true, codeHash: true },
+      orderBy: { createdAt: "desc" },
+      take: 10
+    });
+  }
+}
+
+async function cleanupPasswordCodes(userId: string) {
+  try {
+    await prisma.passwordResetCode.deleteMany({ where: { userId } });
+  } catch (error) {
+    console.error("Profile password code cleanup failed", error);
+  }
+}
+
+function isMissingUsedAtColumn(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return code === "P2022" || (message.includes("PasswordResetCode") && message.includes("usedAt"));
 }
