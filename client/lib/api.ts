@@ -85,6 +85,7 @@ export const api = {
         customerId: string;
         loginId: string;
         name: string;
+        profileImage: string | null;
         packageName: string;
         serviceStatus: string;
         billingStatus: string;

@@ -7,12 +7,14 @@ import { useAuth } from "@/components/auth-provider";
 import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
+import { getProfileInitials, getStoredProfilePhoto } from "@/lib/profile-photo";
 import type { ServiceServer } from "@/lib/types";
 
 type Row = {
   customerId: string;
   loginId: string;
   name: string;
+  profileImage: string | null;
   packageName: string;
   serviceStatus: string;
   billingStatus: string;
@@ -46,6 +48,7 @@ export default function AdminPage() {
   const [customers, setCustomers] = useState<Row[] | null>(null);
   const [servers, setServers] = useState<ServiceServer[] | null>(null);
   const [operational, setOperational] = useState<Operational | null>(null);
+  const [adminProfile, setAdminProfile] = useState<{ name: string; loginId: string; profileImage: string | null } | null>(null);
   const [walletFilter, setWalletFilter] = useState("ALL");
   const [summary, setSummary] = useState<Summary>({
     totalCustomers: 0,
@@ -59,10 +62,16 @@ export default function AdminPage() {
 
   const loadOperationalData = useCallback(async () => {
     try {
-      const [overview, serverData] = await Promise.all([api.adminOverview(), api.adminServers()]);
+      const [overview, serverData, profileData] = await Promise.all([api.adminOverview(), api.adminServers(), api.profile()]);
+      const profile = profileData.profile;
       setCustomers(overview.customers);
       setOperational(overview.operational);
       setServers(serverData.servers);
+      setAdminProfile({
+        name: profile.name,
+        loginId: profile.loginId,
+        profileImage: profile.profileImage || getStoredProfilePhoto(profile.loginId)
+      });
       setSummary(overview.summary);
       setError("");
     } catch (err) {
@@ -86,9 +95,12 @@ export default function AdminPage() {
   return (
     <AppShell admin>
       <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <p className="text-sm font-bold text-ink-soft">Panel internal</p>
-          <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Operasional</h1>
+        <div className="flex items-center gap-4">
+          <ProfileAvatar name={adminProfile?.name || user?.name || "Admin SinyalKita"} image={adminProfile?.profileImage || null} size="lg" />
+          <div>
+            <p className="text-sm font-bold text-ink-soft">Panel internal</p>
+            <h1 className="mt-2 font-heading text-3xl font-bold text-ink">Operasional</h1>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3">
           <Metric icon={UsersRound} label="User aktif" value={String(summary.activeCustomers)} />
@@ -129,9 +141,12 @@ export default function AdminPage() {
                   key={row.customerId}
                   className="rounded-xl border border-line bg-white p-4 shadow-soft md:grid md:grid-cols-[1.1fr_0.9fr_1fr_auto_auto] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-4 md:shadow-none md:hover:bg-mist/55"
                 >
-                  <div>
-                    <p className="font-bold text-ink">{row.name}</p>
-                    <p className="mono mt-1 text-xs font-bold text-ink-soft">{row.customerId}</p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <ProfileAvatar name={row.name} image={row.profileImage} />
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-ink">{row.name}</p>
+                      <p className="mono mt-1 truncate text-xs font-bold text-ink-soft">{row.customerId}</p>
+                    </div>
                   </div>
                   <p className="mono text-xs font-bold text-ink-soft">{row.loginId}</p>
                   <p className="font-semibold text-ink-soft">{row.packageName}</p>
@@ -160,6 +175,16 @@ function Metric({ icon: Icon, label, value }: { icon: typeof UsersRound; label: 
           <p className="mono font-bold text-ink">{value}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProfileAvatar({ name, image, size = "md" }: { name: string; image: string | null; size?: "md" | "lg" }) {
+  const sizeClass = size === "lg" ? "h-14 w-14 text-xl sm:h-16 sm:w-16 sm:text-2xl" : "h-11 w-11 text-sm";
+
+  return (
+    <div className={`${sizeClass} grid shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-white font-bold text-ink shadow-soft`}>
+      {image ? <img src={image} alt={name} className="h-full w-full object-cover" /> : <span>{getProfileInitials(name)}</span>}
     </div>
   );
 }

@@ -8,16 +8,21 @@ import { AppShell } from "@/components/app-shell";
 import { ErrorState, SkeletonBlock } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { getProfileInitials, getStoredProfilePhoto } from "@/lib/profile-photo";
 import type { MeResponse } from "@/lib/types";
 
 export default function DashboardPage() {
   const [data, setData] = useState<MeResponse | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     api
       .me()
-      .then(setData)
+      .then((nextData) => {
+        setData(nextData);
+        setProfileImage(nextData.user.profileImage || getStoredProfilePhoto(nextData.user.loginId));
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Data dashboard belum dapat dimuat."));
   }, []);
 
@@ -46,11 +51,14 @@ export default function DashboardPage() {
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mobile-container grid gap-4 lg:gap-5">
-          <div>
-            <p className="text-sm font-bold text-ink-soft">ID user {data.user.customerId}</p>
-            <h1 className="mobile-page-title mt-2 font-heading text-3xl font-bold text-ink lg:text-4xl">
-              Selamat datang kembali, {data.user.name.split(" ")[0]}
-            </h1>
+          <div className="flex items-center gap-4">
+            <ProfileAvatar name={data.user.name} image={profileImage} size="lg" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-ink-soft">ID user {data.user.customerId}</p>
+              <h1 className="mobile-page-title mt-2 font-heading text-3xl font-bold text-ink lg:text-4xl">
+                Selamat datang kembali, {data.user.name.split(" ")[0]}
+              </h1>
+            </div>
           </div>
 
           <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
@@ -138,6 +146,16 @@ function DetailTile({ icon: Icon, title, value }: { icon: LucideIcon; title: str
       <Icon className="h-5 w-5 text-ocean" />
       <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-ink-soft">{title}</p>
       <p className="mt-1 break-words font-semibold leading-6 text-ink">{value}</p>
+    </div>
+  );
+}
+
+function ProfileAvatar({ name, image, size = "md" }: { name: string; image: string | null; size?: "md" | "lg" }) {
+  const sizeClass = size === "lg" ? "h-16 w-16 text-2xl sm:h-20 sm:w-20 sm:text-3xl" : "h-11 w-11 text-base";
+
+  return (
+    <div className={`${sizeClass} grid shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-white font-bold text-ink shadow-soft`}>
+      {image ? <img src={image} alt={name} className="h-full w-full object-cover" /> : <span>{getProfileInitials(name)}</span>}
     </div>
   );
 }

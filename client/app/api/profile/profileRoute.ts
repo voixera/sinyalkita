@@ -33,10 +33,33 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: "Profil tidak ditemukan." }, { status: 404 });
     }
 
-    return NextResponse.json({ profile: { ...profile, profileImage: null } });
+    const profileImage = await readProfileImage(profile.id);
+
+    return NextResponse.json({ profile: { ...profile, profileImage } });
   } catch (error) {
     return apiError(error);
   }
+}
+
+async function readProfileImage(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { profileImage: true }
+    });
+
+    return user?.profileImage || null;
+  } catch (error) {
+    if (isMissingProfileImageStorage(error)) return null;
+    throw error;
+  }
+}
+
+function isMissingProfileImageStorage(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return code === "P2022" || (message.includes("profileImage") && message.includes("column"));
 }
 
 export async function PATCH(req: NextRequest) {

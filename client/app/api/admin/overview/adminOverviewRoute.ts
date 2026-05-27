@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
       where: { role: "CUSTOMER" },
       orderBy: { name: "asc" },
       select: {
+        id: true,
         customerId: true,
         loginId: true,
         name: true,
@@ -20,11 +21,13 @@ export async function GET(req: NextRequest) {
         billings: { orderBy: { period: "desc" }, take: 1 }
       }
     });
+    const profileImages = await readProfileImages(users.map((user) => user.id));
 
     const customers = users.map((user) => ({
       customerId: user.customerId,
       loginId: user.loginId,
       name: user.name,
+      profileImage: profileImages.get(user.id) || null,
       packageName: user.subscription?.package.name || "-",
       serviceStatus: user.subscription?.status || "SUSPENDED",
       billingStatus: user.billings[0]?.status || "UNPAID",
@@ -115,4 +118,27 @@ function dateKey(date: Date) {
 
 function formatShortDate(date: Date) {
   return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+}
+
+async function readProfileImages(userIds: string[]) {
+  if (userIds.length === 0) return new Map<string, string | null>();
+
+  try {
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, profileImage: true }
+    });
+
+    return new Map(users.map((user) => [user.id, user.profileImage || null]));
+  } catch (error) {
+    if (isMissingProfileImageStorage(error)) return new Map<string, string | null>();
+    throw error;
+  }
+}
+
+function isMissingProfileImageStorage(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return code === "P2022" || (message.includes("profileImage") && message.includes("column"));
 }

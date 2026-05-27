@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
     const server = await prisma.serviceServer.findUnique({
       where: { name: user.serverName }
     });
+    const profileImage = await readProfileImage(user.id);
 
     return NextResponse.json({
       user: {
@@ -62,7 +63,8 @@ export async function GET(req: NextRequest) {
         phone: user.phone,
         address: user.address,
         serverName: user.serverName,
-        role: user.role
+        role: user.role,
+        profileImage
       },
       server,
       subscription: user.subscription,
@@ -73,4 +75,25 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return apiError(error);
   }
+}
+
+async function readProfileImage(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { profileImage: true }
+    });
+
+    return user?.profileImage || null;
+  } catch (error) {
+    if (isMissingProfileImageStorage(error)) return null;
+    throw error;
+  }
+}
+
+function isMissingProfileImageStorage(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return code === "P2022" || (message.includes("profileImage") && message.includes("column"));
 }

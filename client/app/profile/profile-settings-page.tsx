@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app-shell";
 import { useToast } from "@/components/toast";
 import { Button, ErrorState, SkeletonBlock } from "@/components/ui";
 import { api } from "@/lib/api";
+import { getProfileInitials, getProfilePhotoKey } from "@/lib/profile-photo";
 import type { User } from "@/lib/types";
 
 export default function ProfileSettingsPage({ admin = false }: { admin?: boolean }) {
@@ -41,13 +42,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
   }, []);
 
   const initials = useMemo(() => {
-    const source = profile?.name || "SK";
-    return source
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
+    return getProfileInitials(profile?.name || "SK");
   }, [profile?.name]);
 
   async function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -447,8 +442,4 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       )}
     </AppShell>
   );
-}
-
-function getProfilePhotoKey(loginId: string) {
-  return `sinyalkita_profile_photo_${loginId}`;
 }
