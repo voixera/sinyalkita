@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
           customerId: true,
           loginId: true,
           name: true,
+          profileImage: true,
           subscription: { include: { package: true } },
           billings: { orderBy: { period: "desc" }, take: 1 }
         }
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
       customerId: user.customerId,
       loginId: user.loginId,
       name: user.name,
-      profileImage: null,
+      profileImage: user.profileImage,
       packageName: user.subscription?.package.name || "-",
       serviceStatus: user.subscription?.status || "SUSPENDED",
       billingStatus: user.billings[0]?.status || "UNPAID",
