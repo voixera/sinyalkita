@@ -68,6 +68,12 @@ type ServerStatusNoticeEmail = {
   note?: string | null;
 };
 
+type ServerRestoredNoticeEmail = {
+  to: string;
+  name: string;
+  serverName: string;
+};
+
 const DEFAULT_EMAIL_LOGO_URL =
   "https://raw.githubusercontent.com/voixera/sinyalkita/main/client/public/images/logoSinyalKita.png";
 const DEFAULT_ADMIN_EMAIL = "rizafaisal130@gmail.com";
@@ -264,6 +270,18 @@ export async function sendAdminPaymentVerificationNotificationEmail(notice: Admi
 export async function sendServerStatusNotificationEmail(notice: ServerStatusNoticeEmail) {
   const issueText = notice.status === "DOWN" ? "error" : "gangguan";
   const email = createServerStatusEmail({ ...notice, issueText });
+
+  await sendTransactionalEmail({
+    to: notice.to,
+    name: notice.name,
+    subject: email.subject,
+    text: email.text,
+    html: email.html
+  });
+}
+
+export async function sendServerRestoredNotificationEmail(notice: ServerRestoredNoticeEmail) {
+  const email = createServerRestoredEmail(notice);
 
   await sendTransactionalEmail({
     to: notice.to,
@@ -835,6 +853,72 @@ function createServerStatusEmail({
                       <p style="margin:22px 0 0;font-size:14px;line-height:1.7;color:#63758c">
                         Kami akan berusaha membuat koneksi kembali normal secepatnya. Terima kasih sudah sabar menunggu.
                       </p>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:18px 12px 0">
+                    <p style="margin:0;font-size:12px;line-height:1.6;color:#8a9bb0">Email otomatis dari SinyalKita.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `
+  };
+}
+
+function createServerRestoredEmail({ name, serverName }: ServerRestoredNoticeEmail) {
+  const logoUrl = getEmailLogoUrl();
+  const logoMarkup = `<img src="${escapeHtml(logoUrl)}" width="56" height="56" alt="SinyalKita" style="display:block;width:56px;height:56px;border:0" />`;
+  const safeName = escapeHtml(name);
+  const safeServerName = escapeHtml(serverName);
+
+  return {
+    subject: `Yeayy WiFi Server ${serverName} sudah aktif kembali - SinyalKita`,
+    text: [
+      `Yeayy, WiFi Server ${serverName} sudah aktif kembali.`,
+      "",
+      `Halo ${name}, koneksi WiFi di server ${serverName} sudah kembali normal. Terima kasih sudah sabar menunggu.`,
+      "",
+      "Silakan coba gunakan internet seperti biasa."
+    ].join("\n"),
+    html: `
+      <div style="margin:0;padding:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#0b1628">
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">
+          Yeayy, WiFi Server ${safeServerName} sudah aktif kembali.
+        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f4f7fa">
+          <tr>
+            <td align="center" style="padding:32px 12px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;border-collapse:collapse">
+                <tr>
+                  <td style="border:1px solid #d8e0e8;border-radius:22px;background:#ffffff;box-shadow:0 18px 44px rgba(11,22,40,0.08);overflow:hidden">
+                    <div style="padding:30px 28px 28px">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+                        <tr>
+                          <td width="68" style="vertical-align:middle">
+                            <div style="width:56px;height:56px;border-radius:16px;background:#ffffff;border:1px solid #d8e0e8;box-shadow:0 8px 24px rgba(11,22,40,0.08);overflow:hidden;line-height:0">
+                              ${logoMarkup}
+                            </div>
+                          </td>
+                          <td style="vertical-align:middle">
+                            <p style="margin:0;font-size:18px;font-weight:800;line-height:1.2;color:#0b1628">SinyalKita</p>
+                            <p style="margin:4px 0 0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#2f9a6d">WiFi aktif kembali</p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <h1 style="margin:28px 0 0;font-size:27px;line-height:1.18;color:#0b1628">Yeayy, WiFi Server ${safeServerName} sudah aktif kembali</h1>
+                      <p style="margin:14px 0 0;font-size:16px;line-height:1.7;color:#42526a">
+                        Halo ${safeName}, koneksi WiFi di server <strong style="color:#0b1628">${safeServerName}</strong> sudah kembali normal.
+                      </p>
+
+                      <div style="margin:24px 0 0;border:1px solid #bfe8d7;border-radius:18px;background:#edf9f3;padding:18px 20px">
+                        <p style="margin:0;font-size:13px;line-height:1.7;color:#2f6f52">Silakan coba gunakan internet seperti biasa. Terima kasih sudah sabar menunggu selama perbaikan.</p>
+                      </div>
                     </div>
                   </td>
                 </tr>
