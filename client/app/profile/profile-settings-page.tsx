@@ -17,6 +17,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
   const [passwordCode, setPasswordCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordCodeSentTo, setPasswordCodeSentTo] = useState("");
+  const [passwordPanelOpen, setPasswordPanelOpen] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [error, setError] = useState("");
   const [photoSaving, setPhotoSaving] = useState(false);
@@ -151,12 +152,21 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       setPasswordCode("");
       setNewPassword("");
       setPasswordCodeSentTo("");
+      setPasswordPanelOpen(false);
       showToast({ title: result.message, tone: "success" });
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Password belum dapat diperbarui.", tone: "info" });
     } finally {
       setPasswordConfirming(false);
     }
+  }
+
+  function closePasswordPanel() {
+    setPasswordPanelOpen(false);
+    setPasswordCode("");
+    setNewPassword("");
+    setPasswordCodeSentTo("");
+    setShowNewPassword(false);
   }
 
   return (
@@ -274,79 +284,94 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
             </section>
 
             <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
-              <div className="mb-4 flex items-start gap-3 sm:mb-5">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-success sm:h-11 sm:w-11">
-                  <LockKeyhole className="h-5 w-5" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-success sm:h-11 sm:w-11">
+                    <LockKeyhole className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-heading text-lg font-bold text-ink sm:text-xl">Password akun</h2>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">Ubah password dengan kode verifikasi email.</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-heading text-lg font-bold text-ink sm:text-xl">Password akun</h2>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">Kode verifikasi dikirim ke email terhubung sebelum password diperbarui.</p>
-                </div>
+
+                {passwordPanelOpen ? (
+                  <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:w-fit sm:text-sm" onClick={closePasswordPanel}>
+                    Tutup
+                  </Button>
+                ) : (
+                  <Button type="button" className="min-h-10 w-full text-xs sm:w-fit sm:text-sm" onClick={() => setPasswordPanelOpen(true)} disabled={!profile.email}>
+                    <LockKeyhole className="h-4 w-4" />
+                    Ubah password
+                  </Button>
+                )}
               </div>
 
-            <div className="grid gap-3 sm:gap-4">
-              <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={requestPasswordCode} disabled={passwordRequesting || !profile.email}>
-                <MailCheck className="h-4 w-4" />
-                {passwordRequesting ? "Mengirim kode..." : "Kirim kode password"}
-              </Button>
-
               {!profile.email ? (
-                <p className="rounded-xl border border-warning/15 bg-warning-soft px-4 py-3 text-xs font-semibold text-warning sm:text-sm">
+                <p className="mt-4 rounded-xl border border-warning/15 bg-warning-soft px-4 py-3 text-xs font-semibold text-warning sm:text-sm">
                   Hubungkan email terlebih dahulu sebelum mengganti password.
                 </p>
               ) : null}
 
-              {passwordCodeSentTo ? (
-                <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-xs font-semibold text-success sm:text-sm">
-                  Kode password dikirim ke {passwordCodeSentTo}.
-                </p>
-              ) : null}
+              {passwordPanelOpen ? (
+                <div className="mt-4 grid gap-3 border-t border-line/80 pt-4 sm:gap-4">
+                  <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={requestPasswordCode} disabled={passwordRequesting || !profile.email}>
+                    <MailCheck className="h-4 w-4" />
+                    {passwordRequesting ? "Mengirim kode..." : "Kirim kode password"}
+                  </Button>
 
-              <label className="block text-sm font-bold text-ink">
-                Kode verifikasi
-                <input
-                  type="text"
-                  value={passwordCode}
-                  onChange={(event) => setPasswordCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
-                  placeholder="000000"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                />
-              </label>
+                  {passwordCodeSentTo ? (
+                    <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-xs font-semibold text-success sm:text-sm">
+                      Kode password dikirim ke {passwordCodeSentTo}.
+                    </p>
+                  ) : null}
 
-              <label className="block text-sm font-bold text-ink">
-                Password baru
-                <div className="relative mt-2">
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    className="w-full rounded-xl border-line bg-white px-4 py-2.5 pr-12 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
-                    placeholder="Minimal 6 karakter"
-                    autoComplete="new-password"
-                  />
-                  <button
+                  <label className="block text-sm font-bold text-ink">
+                    Kode verifikasi
+                    <input
+                      type="text"
+                      value={passwordCode}
+                      onChange={(event) => setPasswordCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
+                      placeholder="000000"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-ink">
+                    Password baru
+                    <div className="relative mt-2">
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                        className="w-full rounded-xl border-line bg-white px-4 py-2.5 pr-12 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
+                        placeholder="Minimal 6 karakter"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((current) => !current)}
+                        className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-ink-soft hover:bg-mist hover:text-ink"
+                        aria-label={showNewPassword ? "Sembunyikan password baru" : "Tampilkan password baru"}
+                      >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </label>
+
+                  <Button
                     type="button"
-                    onClick={() => setShowNewPassword((current) => !current)}
-                    className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-ink-soft hover:bg-mist hover:text-ink"
-                    aria-label={showNewPassword ? "Sembunyikan password baru" : "Tampilkan password baru"}
+                    className="min-h-10 w-full text-xs sm:min-h-11 sm:w-fit sm:text-sm"
+                    onClick={confirmPasswordChange}
+                    disabled={passwordConfirming || passwordCode.length !== 6 || newPassword.length < 6}
                   >
-                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    <LockKeyhole className="h-4 w-4" />
+                    {passwordConfirming ? "Menyimpan..." : "Simpan password"}
+                  </Button>
                 </div>
-              </label>
-
-              <Button
-                type="button"
-                className="min-h-10 w-full text-xs sm:min-h-11 sm:w-fit sm:text-sm"
-                onClick={confirmPasswordChange}
-                disabled={passwordConfirming || passwordCode.length !== 6 || newPassword.length < 6}
-              >
-                <LockKeyhole className="h-4 w-4" />
-                {passwordConfirming ? "Menyimpan..." : "Simpan password"}
-              </Button>
-            </div>
+              ) : null}
             </section>
           </div>
         </div>
