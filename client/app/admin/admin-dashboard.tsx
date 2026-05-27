@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertTriangle, BarChart3, ChevronDown, Server, UsersRound, WalletCards } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, ChevronDown, Search, Server, UsersRound, WalletCards } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
@@ -15,6 +15,7 @@ type Row = {
   loginId: string;
   name: string;
   profileImage: string | null;
+  serverName: string;
   packageName: string;
   serviceStatus: string;
   billingStatus: string;
@@ -50,6 +51,8 @@ export default function AdminPage() {
   const [operational, setOperational] = useState<Operational | null>(null);
   const [adminProfile, setAdminProfile] = useState<{ name: string; loginId: string; profileImage: string | null } | null>(null);
   const [walletFilter, setWalletFilter] = useState("ALL");
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [serverFilter, setServerFilter] = useState("ALL");
   const [summary, setSummary] = useState<Summary>({
     totalCustomers: 0,
     activeCustomers: 0,
@@ -96,6 +99,31 @@ export default function AdminPage() {
   }, [adminProfile, ready, user?.role]);
 
   const serverIssues = (servers || []).filter((server) => server.status !== "ACTIVE").length;
+  const serverOrder = useMemo(() => (servers || []).map((server) => server.name), [servers]);
+  const filteredCustomers = useMemo(() => {
+    const normalizedSearch = customerSearch.trim().toLowerCase();
+
+    return (customers || [])
+      .filter((customer) => serverFilter === "ALL" || customer.serverName === serverFilter)
+      .filter((customer) => {
+        if (!normalizedSearch) return true;
+        return [
+          customer.name,
+          customer.customerId,
+          customer.loginId,
+          customer.serverName,
+          customer.packageName
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      })
+      .sort((a, b) => {
+        const serverDiff = serverOrder.indexOf(a.serverName) - serverOrder.indexOf(b.serverName);
+        if (serverDiff !== 0) return serverDiff;
+        return a.name.localeCompare(b.name);
+      });
+  }, [customerSearch, customers, serverFilter, serverOrder]);
   const chartPoints = useMemo(() => {
     return (operational?.points || []).map((point) => ({
       ...point,
@@ -139,18 +167,47 @@ export default function AdminPage() {
           </section>
 
           <section className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
-            <div className="hidden grid-cols-[1.1fr_0.9fr_1fr_auto_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft md:grid">
+            <div className="grid gap-3 border-b border-line bg-white px-4 py-4 md:grid-cols-[1fr_220px] md:items-center md:px-5">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
+                <input
+                  type="search"
+                  value={customerSearch}
+                  onChange={(event) => setCustomerSearch(event.target.value)}
+                  className="min-h-11 w-full rounded-xl border-line bg-mist/60 pl-10 pr-4 text-sm font-semibold text-ink placeholder:text-ink-soft/55"
+                  placeholder="Cari user, ID, login, server..."
+                />
+              </label>
+              <div className="relative">
+                <select
+                  value={serverFilter}
+                  onChange={(event) => setServerFilter(event.target.value)}
+                  className="min-h-11 w-full appearance-none rounded-xl border-line bg-mist/60 px-4 pr-10 text-sm font-bold text-ink"
+                >
+                  <option value="ALL">Semua server</option>
+                  {(servers || []).map((server) => (
+                    <option key={server.id} value={server.name}>
+                      {server.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
+              </div>
+            </div>
+
+            <div className="hidden grid-cols-[1.1fr_0.8fr_0.9fr_0.9fr_auto_auto] gap-4 border-b border-line bg-mist/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-ink-soft md:grid">
               <span>User</span>
               <span>Login</span>
+              <span>Server</span>
               <span>Paket</span>
               <span>Status</span>
               <span className="text-right">Nominal</span>
             </div>
             <div className="grid gap-3 p-3 md:block md:divide-y md:divide-line/80 md:p-0">
-              {customers.map((row) => (
+              {filteredCustomers.map((row) => (
                 <div
                   key={row.customerId}
-                  className="rounded-xl border border-line bg-white p-4 shadow-soft md:grid md:grid-cols-[1.1fr_0.9fr_1fr_auto_auto] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-4 md:shadow-none md:hover:bg-mist/55"
+                  className="rounded-xl border border-line bg-white p-4 shadow-soft md:grid md:grid-cols-[1.1fr_0.8fr_0.9fr_0.9fr_auto_auto] md:items-center md:gap-4 md:rounded-none md:border-0 md:px-5 md:py-4 md:shadow-none md:hover:bg-mist/55"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <ProfileAvatar name={row.name} image={row.profileImage} />
@@ -160,6 +217,7 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <p className="mono text-xs font-bold text-ink-soft">{row.loginId}</p>
+                  <p className="text-sm font-bold text-ink-soft">{row.serverName}</p>
                   <p className="font-semibold text-ink-soft">{row.packageName}</p>
                   <div className="flex flex-wrap gap-2">
                     <StatusBadge status={row.serviceStatus} />
@@ -168,6 +226,9 @@ export default function AdminPage() {
                   <p className="mono text-right font-bold text-ink">{formatCurrency(row.amount)}</p>
                 </div>
               ))}
+              {filteredCustomers.length === 0 ? (
+                <p className="px-5 py-6 text-sm font-semibold text-ink-soft">Tidak ada user yang cocok dengan pencarian atau filter server.</p>
+              ) : null}
             </div>
           </section>
         </div>

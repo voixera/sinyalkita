@@ -1,7 +1,7 @@
 import type { Billing, MeResponse, Package, Payment, Role, ServerStatus, ServiceServer, TroubleReport, User } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-const API_CACHE_PREFIX = "sinyalkita_api_cache:v2:";
+const API_CACHE_PREFIX = "sinyalkita_api_cache:v3:";
 const DEFAULT_GET_CACHE_TTL_MS = 45_000;
 
 type CacheEntry<T> = {
@@ -191,6 +191,7 @@ export const api = {
         loginId: string;
         name: string;
         profileImage: string | null;
+        serverName: string;
         packageName: string;
         serviceStatus: string;
         billingStatus: string;
