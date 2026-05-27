@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { CalendarDays, Gauge, MapPin, Phone, Router, Server, Signal } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -50,7 +49,7 @@ export default function DashboardPage() {
           <SkeletonBlock className="h-96" />
         </div>
       ) : (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mobile-container grid gap-4 lg:gap-5">
+        <div className="mobile-container grid gap-4 lg:gap-5">
           <div className="flex items-center gap-4">
             <ProfileAvatar name={data.user.name} image={profileImage} size="lg" />
             <div className="min-w-0">
@@ -94,7 +93,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </section>
-        </motion.div>
+        </div>
       )}
     </AppShell>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, KeyRound, LockKeyhole, Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -137,12 +136,7 @@ export default function LoginPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-mist px-4 py-10">
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
+      <div className="w-full max-w-md">
         <Link href="/" className="mx-auto mb-8 flex w-fit items-center gap-3 rounded-xl px-3 py-2 hover:bg-white">
           <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl bg-white shadow-soft">
             <Image src="/images/logoSinyalKita.png" alt="Logo SinyalKita" width={40} height={40} className="h-10 w-10 object-contain" />
@@ -317,7 +311,7 @@ export default function LoginPage() {
               : "Kode reset hanya berlaku sementara dan dikirim ke email yang tercantum saat akun dibuat."}
           </p>
         </form>
-      </motion.div>
+      </div>
     </main>
   );
 }

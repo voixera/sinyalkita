@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { AlertTriangle, Send, Signal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -53,7 +52,7 @@ export default function ReportProblemPage() {
       ) : !data ? (
         <SkeletonBlock className="h-96" />
       ) : (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mobile-container mobile-stack lg:grid lg:grid-cols-[0.95fr_1.05fr] lg:gap-5">
+        <div className="mobile-container mobile-stack lg:grid lg:grid-cols-[0.95fr_1.05fr] lg:gap-5">
           <section className="mobile-card rounded-xl border border-line bg-white p-5 shadow-soft">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
@@ -110,7 +109,7 @@ export default function ReportProblemPage() {
               </div>
             )}
           </section>
-        </motion.div>
+        </div>
       )}
     </AppShell>
   );

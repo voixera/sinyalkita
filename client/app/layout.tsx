@@ -4,7 +4,7 @@ import "@/styles/globals.css";
 import "@/styles/mobilestyles.css";
 import "@/styles/tabletstyles.css";
 import { AuthProvider } from "@/components/auth-provider";
-import { SupportChat } from "@/components/support-chat";
+import { LazySupportChat } from "@/components/lazy-support-chat";
 import { ToastProvider } from "@/components/toast";
 
 const sora = Sora({
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <AuthProvider>
             {children}
-            <SupportChat />
+            <LazySupportChat />
           </AuthProvider>
         </ToastProvider>
       </body>

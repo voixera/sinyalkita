@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Building2, CheckCircle2, Copy, Landmark, QrCode, ShieldCheck, Upload, WalletCards, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -255,13 +254,9 @@ export default function PaymentPage() {
                       : "Kirim pembayaran"}
             </Button>
             {paid ? (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-5 rounded-xl border border-success/20 bg-success/15 p-4 text-sm font-semibold text-white"
-              >
+              <div className="mt-5 rounded-xl border border-success/20 bg-success/15 p-4 text-sm font-semibold text-white">
                 Pembayaran berhasil dikirim. Admin akan mengecek dan menyetujui pembayaran sebelum tagihan menjadi lunas.
-              </motion.div>
+              </div>
             ) : null}
           </section>
         </div>

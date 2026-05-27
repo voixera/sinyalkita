@@ -7,3 +7,4 @@ coverage
 server/.env
 client/.env.local
 *.log
+*.tsbuildinfo
