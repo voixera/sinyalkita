@@ -243,10 +243,10 @@ export const api = {
     request<{
       reports: Array<TroubleReport & { user: { customerId: string; name: string; loginId: string; phone: string } }>;
     }>("/admin/reports"),
-  resolveReport: (reportId: string) =>
+  resolveReport: (reportId: string, status: "ACCEPTED" | "RESOLVED" = "RESOLVED") =>
     request<{ report: TroubleReport }>(`/admin/reports/${reportId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status: "RESOLVED" })
+      body: JSON.stringify({ status })
     }),
   createReport: (message: string) =>
     request<{ report: TroubleReport }>("/reports", {

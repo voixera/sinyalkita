@@ -37,7 +37,8 @@ export default function ReportProblemPage() {
     }
   }
 
-  const openReport = data?.reports.find((report) => report.status === "OPEN");
+  const openReport = data?.reports.find((report) => report.status === "OPEN" || report.status === "ACCEPTED");
+  const openReportBadge = openReport?.status === "ACCEPTED" ? "ACCEPTED" : "PENDING";
   const recentReports = data?.reports || [];
 
   return (
@@ -64,13 +65,15 @@ export default function ReportProblemPage() {
                     {openReport ? "Laporan gangguan sedang ditangani" : "Koneksi WiFi aman"}
                   </p>
                   <p className="mt-1 text-sm font-semibold leading-6 text-ink-soft">
-                    {openReport
-                      ? "Admin sudah menerima laporan kamu dan akan melakukan pengecekan."
-                      : "Jika WiFi error atau trouble, kirim report agar admin langsung melihatnya."}
+                    {openReport?.status === "ACCEPTED"
+                      ? "Report gangguan kamu sudah diterima dan admin sedang melakukan pengecekan."
+                      : openReport
+                        ? "Report gangguan kamu sudah terkirim ke admin."
+                        : "Jika WiFi error atau trouble, kirim report agar admin langsung melihatnya."}
                   </p>
                 </div>
               </div>
-              <StatusBadge status={openReport ? "PENDING" : "ACTIVE"} />
+              <StatusBadge status={openReport ? openReportBadge : "ACTIVE"} />
             </div>
 
             <div className="mt-5 grid gap-3">
@@ -103,7 +106,7 @@ export default function ReportProblemPage() {
                       <p className="font-semibold leading-6 text-ink">{report.message}</p>
                       <p className="mt-1 text-xs font-bold text-ink-soft">{formatDate(report.createdAt)}</p>
                     </div>
-                    <StatusBadge status={report.status === "OPEN" ? "PENDING" : "SUCCESS"} />
+                    <StatusBadge status={report.status === "OPEN" ? "PENDING" : report.status} />
                   </div>
                 ))}
               </div>

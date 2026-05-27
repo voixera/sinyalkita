@@ -22,7 +22,7 @@ type AdminReport = TroubleReport & {
 export default function ReportInboxPage() {
   const [reports, setReports] = useState<AdminReport[] | null>(null);
   const [error, setError] = useState("");
-  const [resolvingId, setResolvingId] = useState("");
+  const [updatingReportId, setUpdatingReportId] = useState("");
   const { ready, user } = useAuth();
   const { showToast } = useToast();
 
@@ -41,20 +41,20 @@ export default function ReportInboxPage() {
     loadReports();
   }, [ready, user?.role]);
 
-  async function resolveReport(reportId: string) {
-    setResolvingId(reportId);
+  async function updateReportStatus(reportId: string, status: "ACCEPTED" | "RESOLVED") {
+    setUpdatingReportId(reportId);
     try {
-      await api.resolveReport(reportId);
-      showToast({ title: "Laporan ditandai selesai.", tone: "success" });
+      await api.resolveReport(reportId, status);
+      showToast({ title: status === "ACCEPTED" ? "Report diterima dan user dikabari." : "Report ditandai FIX dan user dikabari.", tone: "success" });
       await loadReports();
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Laporan belum dapat diperbarui.", tone: "info" });
     } finally {
-      setResolvingId("");
+      setUpdatingReportId("");
     }
   }
 
-  const openReports = (reports || []).filter((report) => report.status === "OPEN");
+  const openReports = (reports || []).filter((report) => report.status === "OPEN" || report.status === "ACCEPTED");
   const resolvedReports = (reports || []).filter((report) => report.status === "RESOLVED");
 
   return (
@@ -97,10 +97,20 @@ export default function ReportInboxPage() {
                       <p className="text-sm font-semibold leading-6 text-ink">{report.message}</p>
                       <p className="mt-1 text-xs font-bold text-ink-soft">{formatDate(report.createdAt)}</p>
                     </div>
-                    <Button type="button" variant="ghost" disabled={resolvingId === report.id} onClick={() => resolveReport(report.id)}>
-                      <CheckCircle2 className="h-4 w-4" />
-                      Tandai selesai
-                    </Button>
+                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                      <StatusBadge status={report.status} />
+                      {report.status === "OPEN" ? (
+                        <Button type="button" variant="ghost" disabled={updatingReportId === report.id} onClick={() => updateReportStatus(report.id, "ACCEPTED")}>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Diterima
+                        </Button>
+                      ) : (
+                        <Button type="button" variant="ghost" disabled={updatingReportId === report.id} onClick={() => updateReportStatus(report.id, "RESOLVED")}>
+                          <CheckCircle2 className="h-4 w-4" />
+                          FIX
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -122,7 +132,10 @@ export default function ReportInboxPage() {
                       <p className="font-bold text-ink">{report.user.name}</p>
                       <p className="text-sm font-semibold text-ink-soft">{report.message}</p>
                     </div>
-                    <p className="text-xs font-bold text-ink-soft">{report.resolvedAt ? formatDate(report.resolvedAt) : "-"}</p>
+                    <div className="flex flex-col items-start gap-2 sm:items-end">
+                      <StatusBadge status={report.status} />
+                      <p className="text-xs font-bold text-ink-soft">{report.resolvedAt ? formatDate(report.resolvedAt) : "-"}</p>
+                    </div>
                   </div>
                 ))}
               </div>

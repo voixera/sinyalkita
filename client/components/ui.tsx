@@ -56,15 +56,17 @@ export function StatusBadge({ status }: { status: string }) {
     OVERDUE: "Lewat tempo",
     SUCCESS: "Disetujui",
     PENDING: "Perlu dicek",
+    ACCEPTED: "Diterima",
+    RESOLVED: "FIX",
     FAILED: "Ditolak",
     TROUBLE: "Gangguan",
     DOWN: "Error"
   };
 
   const tone =
-    status === "ACTIVE" || status === "PAID" || status === "SUCCESS"
+    status === "ACTIVE" || status === "PAID" || status === "SUCCESS" || status === "RESOLVED"
       ? "bg-success-soft text-success border-success/15"
-      : status === "MAINTENANCE" || status === "UNPAID" || status === "PENDING" || status === "TROUBLE"
+      : status === "MAINTENANCE" || status === "UNPAID" || status === "PENDING" || status === "TROUBLE" || status === "ACCEPTED"
         ? "bg-warning-soft text-warning border-warning/15"
         : "bg-danger-soft text-danger border-danger/15";
 

@@ -2,7 +2,7 @@ export type Role = "CUSTOMER" | "ADMIN";
 export type ServiceStatus = "ACTIVE" | "MAINTENANCE" | "SUSPENDED";
 export type BillingStatus = "UNPAID" | "PAID" | "OVERDUE";
 export type PaymentStatus = "SUCCESS" | "PENDING" | "FAILED";
-export type ReportStatus = "OPEN" | "RESOLVED";
+export type ReportStatus = "OPEN" | "ACCEPTED" | "RESOLVED";
 export type ServerStatus = "ACTIVE" | "TROUBLE" | "DOWN";
 
 export type User = {

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         }
       }),
       prisma.payment.count({ where: { status: "PENDING" } }),
-      prisma.troubleReport.count({ where: { status: "OPEN" } }),
+      prisma.troubleReport.count({ where: { status: { in: ["OPEN", "ACCEPTED"] } } }),
       prisma.payment.findMany({
         where: { paidAt: { gte: start, lt: end } },
         select: { amount: true, method: true, paidAt: true, status: true }

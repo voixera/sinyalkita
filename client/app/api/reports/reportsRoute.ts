@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const existingOpen = await prisma.troubleReport.findFirst({
-      where: { userId: auth.user.id, status: "OPEN" }
+      where: { userId: auth.user.id, status: { in: ["OPEN", "ACCEPTED"] } }
     });
 
     if (existingOpen) {
