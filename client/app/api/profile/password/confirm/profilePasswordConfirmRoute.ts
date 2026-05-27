@@ -44,10 +44,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(payload.password, 10);
 
-    await prisma.user.update({
-      where: { id: auth.user.id },
-      data: { passwordHash }
-    });
+    await updatePassword(auth.user.id, passwordHash);
 
     await cleanupPasswordCodes(auth.user.id);
 
@@ -63,42 +60,90 @@ function invalidCodeResponse() {
 
 async function findActivePasswordCodes(userId: string): Promise<PasswordCodeRecord[]> {
   try {
-    return await prisma.passwordResetCode.findMany({
-      where: {
-        userId,
-        usedAt: null,
-        expiresAt: { gt: new Date() }
-      },
-      select: { id: true, codeHash: true },
-      orderBy: { createdAt: "desc" },
-      take: 10
-    });
+    return await prisma.$queryRaw<PasswordCodeRecord[]>`
+      SELECT "id", "codeHash"
+      FROM "PasswordResetCode"
+      WHERE "userId" = ${userId}
+        AND "usedAt" IS NULL
+        AND "expiresAt" > NOW()
+      ORDER BY "createdAt" DESC
+      LIMIT 10
+    `;
   } catch (error) {
-    if (!isMissingUsedAtColumn(error)) throw error;
+    if (!isPasswordCodeSchemaMismatch(error)) throw error;
+  }
 
-    return prisma.passwordResetCode.findMany({
-      where: {
-        userId,
-        expiresAt: { gt: new Date() }
-      },
-      select: { id: true, codeHash: true },
-      orderBy: { createdAt: "desc" },
-      take: 10
+  try {
+    return await prisma.$queryRaw<PasswordCodeRecord[]>`
+      SELECT "id", "codeHash"
+      FROM "PasswordResetCode"
+      WHERE "userId" = ${userId}
+        AND "expiresAt" > NOW()
+      ORDER BY "expiresAt" DESC
+      LIMIT 10
+    `;
+  } catch (error) {
+    if (!isPasswordCodeSchemaMismatch(error)) throw error;
+  }
+
+  return prisma.$queryRaw<PasswordCodeRecord[]>`
+    SELECT "id", "codeHash"
+    FROM "PasswordResetCode"
+    WHERE "userId" = ${userId}
+    LIMIT 10
+  `;
+}
+
+async function updatePassword(userId: string, passwordHash: string) {
+  try {
+    const changed = await prisma.$executeRaw`
+      UPDATE "User"
+      SET "passwordHash" = ${passwordHash}
+      WHERE "id" = ${userId}
+    `;
+
+    if (changed === 0) {
+      throw new Error("Profile password user row was not updated.");
+    }
+  } catch (error) {
+    if (!isPasswordUpdateSchemaMismatch(error)) {
+      console.error("Profile password update failed", error);
+      throw error;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash }
     });
   }
 }
 
 async function cleanupPasswordCodes(userId: string) {
   try {
-    await prisma.passwordResetCode.deleteMany({ where: { userId } });
+    await prisma.$executeRaw`
+      DELETE FROM "PasswordResetCode"
+      WHERE "userId" = ${userId}
+    `;
   } catch (error) {
     console.error("Profile password code cleanup failed", error);
   }
 }
 
-function isMissingUsedAtColumn(error: unknown) {
+function isPasswordCodeSchemaMismatch(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const code = "code" in error && typeof error.code === "string" ? error.code : "";
   const message = "message" in error && typeof error.message === "string" ? error.message : "";
-  return code === "P2022" || (message.includes("PasswordResetCode") && message.includes("usedAt"));
+  return (
+    code === "P2010" ||
+    code === "P2022" ||
+    (message.includes("PasswordResetCode") &&
+      (message.includes("usedAt") || message.includes("createdAt") || message.includes("expiresAt")))
+  );
+}
+
+function isPasswordUpdateSchemaMismatch(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error && typeof error.code === "string" ? error.code : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return code === "P2010" || code === "P2022" || (message.includes("User") && message.includes("passwordHash"));
 }
