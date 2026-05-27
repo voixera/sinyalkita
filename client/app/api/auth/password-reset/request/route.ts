@@ -26,10 +26,10 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({
-        message: "Jika akun ditemukan, kode reset akan dikirim ke email terdaftar.",
-        expiresInMinutes: RESET_CODE_EXPIRES_IN_MINUTES
-      });
+      return NextResponse.json(
+        { message: "Email atau ID login tidak ditemukan." },
+        { status: 404 }
+      );
     }
 
     if (!user.email) {
