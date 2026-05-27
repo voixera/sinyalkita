@@ -10,8 +10,3 @@ export function getProfileInitials(name: string) {
     .slice(0, 2)
     .toUpperCase();
 }
-
-export function getStoredProfilePhoto(loginId?: string | null) {
-  if (!loginId || typeof window === "undefined") return null;
-  return localStorage.getItem(getProfilePhotoKey(loginId));
-}

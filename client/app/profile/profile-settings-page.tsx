@@ -35,18 +35,8 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       .profile()
       .then((data) => {
         setProfile(data.profile);
-        const localImage = localStorage.getItem(getProfilePhotoKey(data.profile.loginId));
-        setProfileImage(data.profile.profileImage || localImage);
-        if (!data.profile.profileImage && localImage) {
-          api
-            .updateProfile({ profileImage: localImage })
-            .then((result) => {
-              setProfile(result.profile);
-              setProfileImage(result.profile.profileImage);
-              localStorage.removeItem(getProfilePhotoKey(result.profile.loginId));
-            })
-            .catch(() => undefined);
-        }
+        setProfileImage(data.profile.profileImage);
+        localStorage.removeItem(getProfilePhotoKey(data.profile.loginId));
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Profil belum dapat dimuat."));
   }, []);

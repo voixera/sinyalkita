@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { ErrorState, SkeletonBlock, StatusBadge } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
-import { getProfileInitials, getStoredProfilePhoto } from "@/lib/profile-photo";
+import { getProfileInitials } from "@/lib/profile-photo";
 import type { ServiceServer } from "@/lib/types";
 
 type Row = {
@@ -89,7 +89,7 @@ export default function AdminPage() {
         setAdminProfile({
           name: profile.name,
           loginId: profile.loginId,
-          profileImage: profile.profileImage || getStoredProfilePhoto(profile.loginId)
+          profileImage: profile.profileImage
         });
       })
       .catch(() => undefined);

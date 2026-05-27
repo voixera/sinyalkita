@@ -7,7 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { ErrorState, SkeletonBlock } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
-import { getProfileInitials, getStoredProfilePhoto } from "@/lib/profile-photo";
+import { getProfileInitials } from "@/lib/profile-photo";
 import type { MeResponse } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -20,7 +20,7 @@ export default function DashboardPage() {
       .me()
       .then((nextData) => {
         setData(nextData);
-        setProfileImage(nextData.user.profileImage || getStoredProfilePhoto(nextData.user.loginId));
+        setProfileImage(nextData.user.profileImage);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Data dashboard belum dapat dimuat."));
   }, []);
