@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
+import { sendAdminReportNotificationEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,18 @@ export async function POST(req: NextRequest) {
         status: "OPEN"
       }
     });
+
+    try {
+      const openReportCount = await prisma.troubleReport.count({ where: { status: "OPEN" } });
+      await sendAdminReportNotificationEmail({
+        count: openReportCount,
+        userName: auth.user.name,
+        detail: payload.message,
+        createdAt: report.createdAt
+      });
+    } catch (error) {
+      console.error("Admin report notification email failed", error);
+    }
 
     return NextResponse.json({ report }, { status: 201 });
   } catch (error) {

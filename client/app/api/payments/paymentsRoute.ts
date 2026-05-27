@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
-import { sendPaymentProcessingEmail } from "@/lib/server/mail";
+import { sendAdminPaymentVerificationNotificationEmail, sendPaymentProcessingEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -105,6 +105,18 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error("Payment processing receipt email failed", error);
       }
+    }
+
+    try {
+      const pendingPaymentCount = await prisma.payment.count({ where: { status: "PENDING" } });
+      await sendAdminPaymentVerificationNotificationEmail({
+        count: pendingPaymentCount,
+        userName: auth.user.name,
+        detail: `${payments.length} pembayaran baru - ${payments.map((payment) => payment.billing.invoiceNo).join(", ")}`,
+        createdAt: payments[0]?.paidAt || new Date()
+      });
+    } catch (error) {
+      console.error("Admin payment verification notification email failed", error);
     }
 
     return NextResponse.json({ payments, billings }, { status: 201 });
