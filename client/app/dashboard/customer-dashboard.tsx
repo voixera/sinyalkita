@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertTriangle, ArrowRight, CalendarDays, CreditCard, Gauge, MapPin, Phone, ReceiptText, Router, Server, Signal, Wifi } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, CreditCard, Gauge, MapPin, Phone, ReceiptText, Router, Server, Signal } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -29,14 +29,12 @@ export default function DashboardPage() {
       : serverStatus === "TROUBLE"
         ? "WiFi sedang gangguan"
         : "WiFi sedang error";
-  const connectionSummaryText =
-    serverStatus === "ACTIVE" ? "Stabil" : serverStatus === "TROUBLE" ? "Perlu dicek" : "Butuh bantuan admin";
   const serverStatusDescription =
     serverStatus === "ACTIVE"
-      ? "Server layanan kamu berjalan normal."
+      ? "Koneksi internet sedang berjalan normal."
       : serverStatus === "TROUBLE"
-        ? "Server layanan kamu sedang mengalami gangguan. Tim admin sedang melakukan pengecekan."
-        : "Server layanan kamu sedang error. Silakan pantau informasi dari admin atau kirim report jika dibutuhkan.";
+        ? "Koneksi sedang mengalami gangguan. Tim admin sedang melakukan pengecekan."
+        : "Koneksi sedang error. Silakan pantau informasi dari admin atau kirim report jika dibutuhkan.";
 
   return (
     <AppShell>
@@ -60,33 +58,24 @@ export default function DashboardPage() {
             <QuickAction href="/report-problem" icon={AlertTriangle} label="Report gangguan" />
           </div>
 
-          <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+          <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
             <div className="overflow-hidden rounded-xl border border-line bg-white shadow-soft">
-              <div className="border-b border-line/70 bg-[radial-gradient(circle_at_top_right,rgba(47,154,109,0.15),transparent_16rem),linear-gradient(135deg,#ffffff,#f8fbfd)] p-5 sm:p-6">
+              <div className="bg-[radial-gradient(circle_at_top_right,rgba(47,154,109,0.15),transparent_16rem),linear-gradient(135deg,#ffffff,#f8fbfd)] p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-bold text-ink-soft">Paket layanan</p>
                     <h2 className="mt-2 font-heading text-2xl font-bold text-ink sm:text-3xl">{data.subscription.package.name}</h2>
-                    <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-ink-soft">
-                      Layanan terhubung ke {data.user.serverName} dengan koneksi {connectionSummaryText.toLowerCase()}.
-                    </p>
+                    <p className="mt-2 max-w-xl text-sm font-semibold leading-6 text-ink-soft">Rincian paket internet yang terhubung ke akun kamu.</p>
                   </div>
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-success-soft text-success sm:h-14 sm:w-14">
                     <Router className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <Info icon={Gauge} label="Kecepatan" value={`${data.subscription.package.speedMbps} Mbps`} />
                   <Info icon={CalendarDays} label="Mulai layanan" value={formatDate(data.subscription.startedAt)} />
-                  <Info icon={Wifi} label="Koneksi" value={connectionSummaryText} />
                 </div>
-              </div>
-
-              <div className="grid gap-3 p-5 sm:grid-cols-3 sm:p-6">
-                <DetailTile icon={Server} title="Server" value={data.user.serverName} />
-                <DetailTile icon={MapPin} title="Alamat" value={data.user.address} />
-                <DetailTile icon={Phone} title="Kontak" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
               </div>
             </div>
 
@@ -118,6 +107,20 @@ export default function DashboardPage() {
 
                 {data.currentBilling ? <QuickAction href="/pembayaran" icon={CreditCard} label="Bayar tagihan" className="mt-5 w-full" /> : null}
               </section>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-line bg-white p-5 shadow-soft sm:p-6">
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-sm font-bold text-ink-soft">Data layanan</p>
+                <h2 className="mt-1 font-heading text-xl font-bold text-ink sm:text-2xl">Informasi terdaftar</h2>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 lg:grid-cols-3">
+              <DetailTile icon={Server} title="Server" value={data.user.serverName} />
+              <DetailTile icon={MapPin} title="Alamat" value={data.user.address} />
+              <DetailTile icon={Phone} title="Kontak" value={`${data.user.phone}${data.user.email ? ` - ${data.user.email}` : ""}`} />
             </div>
           </section>
         </motion.div>
