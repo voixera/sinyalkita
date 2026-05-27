@@ -1,1 +1,1 @@
-export { dynamic, POST } from "./profilePasswordConfirmRoute";
+export { dynamic, runtime, POST } from "./profilePasswordConfirmRoute";

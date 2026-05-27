@@ -32,22 +32,15 @@ export async function POST(req: NextRequest) {
 
     const code = createVerificationCode();
     const codeHash = await bcrypt.hash(code, 10);
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + PASSWORD_CODE_EXPIRES_IN_MINUTES * 60 * 1000);
+    const expiresAt = new Date(Date.now() + PASSWORD_CODE_EXPIRES_IN_MINUTES * 60 * 1000);
 
-    const [, createdResetCode] = await prisma.$transaction([
-      prisma.passwordResetCode.updateMany({
-        where: { userId: user.id, usedAt: null },
-        data: { usedAt: now }
-      }),
-      prisma.passwordResetCode.create({
-        data: {
-          userId: user.id,
-          codeHash,
-          expiresAt
-        }
-      })
-    ]);
+    const createdResetCode = await prisma.passwordResetCode.create({
+      data: {
+        userId: user.id,
+        codeHash,
+        expiresAt
+      }
+    });
 
     try {
       await sendPasswordResetEmail({

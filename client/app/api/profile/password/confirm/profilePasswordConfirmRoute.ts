@@ -5,6 +5,7 @@ import { apiError, requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const confirmPasswordSchema = z.object({
   code: z.string().trim().regex(/^\d{6}$/),
@@ -17,21 +18,30 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const payload = confirmPasswordSchema.parse(await req.json());
-    const resetCode = await prisma.passwordResetCode.findFirst({
+    const resetCodes = await prisma.passwordResetCode.findMany({
       where: {
         userId: auth.user.id,
         usedAt: null,
         expiresAt: { gt: new Date() }
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      take: 10
     });
 
-    if (!resetCode) {
+    if (resetCodes.length === 0) {
       return invalidCodeResponse();
     }
 
-    const valid = await bcrypt.compare(payload.code, resetCode.codeHash);
-    if (!valid) {
+    let matchedCodeId = "";
+    for (const resetCode of resetCodes) {
+      const valid = await bcrypt.compare(payload.code, resetCode.codeHash);
+      if (valid) {
+        matchedCodeId = resetCode.id;
+        break;
+      }
+    }
+
+    if (!matchedCodeId) {
       return invalidCodeResponse();
     }
 
@@ -44,14 +54,14 @@ export async function POST(req: NextRequest) {
         data: { passwordHash }
       }),
       prisma.passwordResetCode.update({
-        where: { id: resetCode.id },
+        where: { id: matchedCodeId },
         data: { usedAt: now }
       }),
       prisma.passwordResetCode.updateMany({
         where: {
           userId: auth.user.id,
           usedAt: null,
-          id: { not: resetCode.id }
+          id: { not: matchedCodeId }
         },
         data: { usedAt: now }
       })

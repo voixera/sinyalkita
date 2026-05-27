@@ -18,8 +18,8 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
   const [emailPanelOpen, setEmailPanelOpen] = useState(false);
   const [passwordCode, setPasswordCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [passwordCodeSentTo, setPasswordCodeSentTo] = useState("");
   const [passwordPanelOpen, setPasswordPanelOpen] = useState(false);
+  const [passwordFeedback, setPasswordFeedback] = useState<{ message: string; tone: "success" | "danger" | "info" } | null>(null);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [error, setError] = useState("");
   const [photoSaving, setPhotoSaving] = useState(false);
@@ -134,20 +134,32 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
   async function requestPasswordCode() {
     setPasswordRequesting(true);
     setPasswordCode("");
+    setPasswordFeedback(null);
     try {
       const result = await api.requestProfilePasswordCode();
-      setPasswordCodeSentTo(result.email);
+      setPasswordFeedback({ message: `Kode password dikirim ke ${result.email}.`, tone: "success" });
       showToast({ title: result.message, tone: "success" });
     } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Kode verifikasi password belum dapat dikirim.", tone: "info" });
+      const message = err instanceof Error ? err.message : "Kode verifikasi password belum dapat dikirim.";
+      setPasswordFeedback({ message, tone: "danger" });
+      showToast({ title: message, tone: "info" });
     } finally {
       setPasswordRequesting(false);
     }
   }
 
   async function confirmPasswordChange() {
+    setPasswordFeedback(null);
+
+    if (passwordCode.length !== 6) {
+      setPasswordFeedback({ message: "Masukkan kode verifikasi 6 angka dari email.", tone: "info" });
+      return;
+    }
+
     if (newPassword.length < 6) {
-      showToast({ title: "Password baru minimal 6 karakter.", tone: "info" });
+      const message = "Password baru minimal 6 karakter.";
+      setPasswordFeedback({ message, tone: "info" });
+      showToast({ title: message, tone: "info" });
       return;
     }
 
@@ -156,11 +168,13 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       const result = await api.confirmProfilePasswordChange({ code: passwordCode, password: newPassword });
       setPasswordCode("");
       setNewPassword("");
-      setPasswordCodeSentTo("");
+      setPasswordFeedback(null);
       setPasswordPanelOpen(false);
       showToast({ title: result.message, tone: "success" });
     } catch (err) {
-      showToast({ title: err instanceof Error ? err.message : "Password belum dapat diperbarui.", tone: "info" });
+      const message = err instanceof Error ? err.message : "Password belum dapat diperbarui.";
+      setPasswordFeedback({ message, tone: "danger" });
+      showToast({ title: message, tone: "info" });
     } finally {
       setPasswordConfirming(false);
     }
@@ -170,7 +184,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
     setPasswordPanelOpen(false);
     setPasswordCode("");
     setNewPassword("");
-    setPasswordCodeSentTo("");
+    setPasswordFeedback(null);
     setShowNewPassword(false);
   }
 
@@ -361,9 +375,17 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                     {passwordRequesting ? "Mengirim kode..." : "Kirim kode password"}
                   </Button>
 
-                  {passwordCodeSentTo ? (
-                    <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-xs font-semibold text-success sm:text-sm">
-                      Kode password dikirim ke {passwordCodeSentTo}.
+                  {passwordFeedback ? (
+                    <p
+                      className={`rounded-xl border px-4 py-3 text-xs font-semibold sm:text-sm ${
+                        passwordFeedback.tone === "success"
+                          ? "border-success/15 bg-success-soft text-success"
+                          : passwordFeedback.tone === "danger"
+                            ? "border-danger/15 bg-danger-soft text-danger"
+                            : "border-warning/15 bg-warning-soft text-warning"
+                      }`}
+                    >
+                      {passwordFeedback.message}
                     </p>
                   ) : null}
 
@@ -372,7 +394,10 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                     <input
                       type="text"
                       value={passwordCode}
-                      onChange={(event) => setPasswordCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                      onChange={(event) => {
+                        setPasswordCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                        setPasswordFeedback(null);
+                      }}
                       className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
                       placeholder="000000"
                       inputMode="numeric"
@@ -386,7 +411,10 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                       <input
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
-                        onChange={(event) => setNewPassword(event.target.value)}
+                        onChange={(event) => {
+                          setNewPassword(event.target.value);
+                          setPasswordFeedback(null);
+                        }}
                         className="w-full rounded-xl border-line bg-white px-4 py-2.5 pr-12 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
                         placeholder="Minimal 6 karakter"
                         autoComplete="new-password"
