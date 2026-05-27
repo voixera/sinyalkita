@@ -74,6 +74,12 @@ type ServerRestoredNoticeEmail = {
   serverName: string;
 };
 
+type ReportCheckingEmail = {
+  to: string;
+  name: string;
+  message: string;
+};
+
 const DEFAULT_EMAIL_LOGO_URL =
   "https://raw.githubusercontent.com/voixera/sinyalkita/main/client/public/images/logoSinyalKita.png";
 const DEFAULT_ADMIN_EMAIL = "rizafaisal130@gmail.com";
@@ -286,6 +292,18 @@ export async function sendServerRestoredNotificationEmail(notice: ServerRestored
   await sendTransactionalEmail({
     to: notice.to,
     name: notice.name,
+    subject: email.subject,
+    text: email.text,
+    html: email.html
+  });
+}
+
+export async function sendReportCheckingEmail(report: ReportCheckingEmail) {
+  const email = createReportCheckingEmail(report);
+
+  await sendTransactionalEmail({
+    to: report.to,
+    name: report.name,
     subject: email.subject,
     text: email.text,
     html: email.html
@@ -919,6 +937,79 @@ function createServerRestoredEmail({ name, serverName }: ServerRestoredNoticeEma
                       <div style="margin:24px 0 0;border:1px solid #bfe8d7;border-radius:18px;background:#edf9f3;padding:18px 20px">
                         <p style="margin:0;font-size:13px;line-height:1.7;color:#2f6f52">Silakan coba gunakan internet seperti biasa. Terima kasih sudah sabar menunggu selama perbaikan.</p>
                       </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:18px 12px 0">
+                    <p style="margin:0;font-size:12px;line-height:1.6;color:#8a9bb0">Email otomatis dari SinyalKita.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `
+  };
+}
+
+function createReportCheckingEmail({ name, message }: ReportCheckingEmail) {
+  const logoUrl = getEmailLogoUrl();
+  const logoMarkup = `<img src="${escapeHtml(logoUrl)}" width="56" height="56" alt="SinyalKita" style="display:block;width:56px;height:56px;border:0" />`;
+  const safeName = escapeHtml(name);
+  const safeMessage = escapeHtml(message);
+
+  return {
+    subject: "Report gangguan diterima - SinyalKita",
+    text: [
+      `Halo ${name},`,
+      "",
+      "Baik, mohon tunggu sebentar kami akan melakukan pengecekan.",
+      "",
+      `Report kamu: ${message}`,
+      "",
+      "Tim SinyalKita akan menindaklanjuti laporan ini secepatnya."
+    ].join("\n"),
+    html: `
+      <div style="margin:0;padding:0;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#0b1628">
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">
+          Baik, mohon tunggu sebentar kami akan melakukan pengecekan.
+        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#f4f7fa">
+          <tr>
+            <td align="center" style="padding:32px 12px">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;border-collapse:collapse">
+                <tr>
+                  <td style="border:1px solid #d8e0e8;border-radius:22px;background:#ffffff;box-shadow:0 18px 44px rgba(11,22,40,0.08);overflow:hidden">
+                    <div style="padding:30px 28px 28px">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+                        <tr>
+                          <td width="68" style="vertical-align:middle">
+                            <div style="width:56px;height:56px;border-radius:16px;background:#ffffff;border:1px solid #d8e0e8;box-shadow:0 8px 24px rgba(11,22,40,0.08);overflow:hidden;line-height:0">
+                              ${logoMarkup}
+                            </div>
+                          </td>
+                          <td style="vertical-align:middle">
+                            <p style="margin:0;font-size:18px;font-weight:800;line-height:1.2;color:#0b1628">SinyalKita</p>
+                            <p style="margin:4px 0 0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#b9822e">Report diproses</p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <h1 style="margin:28px 0 0;font-size:27px;line-height:1.18;color:#0b1628">Baik, mohon tunggu sebentar</h1>
+                      <p style="margin:14px 0 0;font-size:16px;line-height:1.7;color:#42526a">
+                        Halo ${safeName}, kami akan melakukan pengecekan untuk report gangguan yang kamu kirim.
+                      </p>
+
+                      <div style="margin:24px 0 0;border:1px solid #f2d7a7;border-radius:18px;background:#fff8ea;padding:18px 20px">
+                        <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#b9822e">Report kamu</p>
+                        <p style="margin:0;font-size:14px;line-height:1.7;color:#42526a">${safeMessage}</p>
+                      </div>
+
+                      <p style="margin:22px 0 0;font-size:14px;line-height:1.7;color:#63758c">
+                        Tim SinyalKita akan menindaklanjuti laporan ini secepatnya. Terima kasih sudah memberi tahu kami.
+                      </p>
                     </div>
                   </td>
                 </tr>
