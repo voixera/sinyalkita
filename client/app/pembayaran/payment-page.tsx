@@ -67,6 +67,9 @@ export default function PaymentPage() {
     setLoading(true);
     try {
       await api.pay(selectedBillingIds, method, proof);
+      setBillings((current) => (current || []).filter((billing) => !selectedBillingIds.includes(billing.id)));
+      setSelectedBillingIds([]);
+      setProof(null);
       setPaid(true);
       showToast({ title: "Pembayaran dikirim dan menunggu verifikasi admin.", tone: "success" });
     } catch (err) {

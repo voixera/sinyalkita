@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
+import { sendPaymentProcessingEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +90,22 @@ export async function POST(req: NextRequest) {
         })
       )
     );
+
+    if (auth.user.email) {
+      try {
+        await sendPaymentProcessingEmail({
+          to: auth.user.email,
+          name: auth.user.name,
+          invoices: payments.map((payment) => payment.billing.invoiceNo),
+          amount: payments.reduce((total, payment) => total + payment.amount, 0),
+          method: payload.method,
+          reference: payments.map((payment) => payment.reference).join(", "),
+          paidAt: payments[0]?.paidAt || new Date()
+        });
+      } catch (error) {
+        console.error("Payment processing receipt email failed", error);
+      }
+    }
 
     return NextResponse.json({ payments, billings }, { status: 201 });
   } catch (error) {

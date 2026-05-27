@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, CreditCard, ReceiptText } from "lucide-react";
+import { CalendarClock, CheckCircle2, CreditCard, ReceiptText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ErrorState, LinkButton, SkeletonBlock, StatusBadge } from "@/components/ui";
@@ -30,8 +30,19 @@ export default function BillingsPage() {
 
       {error ? (
         <ErrorState title="Tagihan belum dapat dimuat" message={error} />
-      ) : !billings || !current ? (
+      ) : !billings ? (
         <SkeletonBlock className="h-96" />
+      ) : !current ? (
+        <section className="mobile-card rounded-xl border border-success/15 bg-white p-6 text-center shadow-soft">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-xl bg-success-soft text-success">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <p className="mt-5 text-sm font-bold uppercase tracking-[0.12em] text-success">Lunas</p>
+          <h2 className="mt-2 font-heading text-2xl font-bold text-ink">Tidak ada tagihan aktif</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm font-semibold leading-6 text-ink-soft">
+            Tagihan yang sudah dibayar atau sedang diverifikasi admin tidak ditampilkan lagi di halaman ini.
+          </p>
+        </section>
       ) : (
         <div className="mobile-container mobile-stack xl:grid xl:grid-cols-[0.8fr_1.2fr] xl:gap-5">
           <section className="mobile-card rounded-xl bg-white p-6 shadow-soft">

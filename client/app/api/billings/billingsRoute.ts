@@ -10,7 +10,13 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
 
     const billings = await prisma.billing.findMany({
-      where: { userId: auth.user.id },
+      where: {
+        userId: auth.user.id,
+        status: { not: "PAID" },
+        payments: {
+          none: { status: "PENDING" }
+        }
+      },
       orderBy: { period: "desc" }
     });
 

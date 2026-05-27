@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
+import { sendPaymentApprovedEmail } from "@/lib/server/mail";
 import { prisma } from "@/lib/server/prisma";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { paymentId:
     const payload = verifySchema.parse(await req.json());
     const payment = await prisma.payment.findUnique({
       where: { id: params.paymentId },
-      include: { billing: true }
+      include: {
+        billing: true,
+        user: { select: { name: true, email: true } }
+      }
     });
 
     if (!payment) {
@@ -34,7 +38,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { paymentId:
         where: { id: payment.id },
         data: { status: nextStatus },
         include: {
-          billing: { select: { invoiceNo: true, period: true } }
+          billing: { select: { invoiceNo: true, period: true } },
+          user: { select: { name: true, email: true } }
         }
       });
 
@@ -47,6 +52,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { paymentId:
 
       return verified;
     });
+
+    if (payload.action === "approve" && updated.user.email) {
+      try {
+        await sendPaymentApprovedEmail({
+          to: updated.user.email,
+          name: updated.user.name,
+          invoices: [updated.billing.invoiceNo],
+          amount: updated.amount,
+          method: updated.method,
+          reference: updated.reference,
+          paidAt: updated.paidAt
+        });
+      } catch (error) {
+        console.error("Payment approved receipt email failed", error);
+      }
+    }
 
     return NextResponse.json({ payment: updated });
   } catch (error) {
