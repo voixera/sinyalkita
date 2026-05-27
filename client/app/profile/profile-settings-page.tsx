@@ -37,6 +37,16 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
         setProfile(data.profile);
         const localImage = localStorage.getItem(getProfilePhotoKey(data.profile.loginId));
         setProfileImage(data.profile.profileImage || localImage);
+        if (!data.profile.profileImage && localImage) {
+          api
+            .updateProfile({ profileImage: localImage })
+            .then((result) => {
+              setProfile(result.profile);
+              setProfileImage(result.profile.profileImage);
+              localStorage.removeItem(getProfilePhotoKey(result.profile.loginId));
+            })
+            .catch(() => undefined);
+        }
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Profil belum dapat dimuat."));
   }, []);
@@ -78,18 +88,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       setPhotoPanelOpen(false);
       showToast({ title: "Foto profil berhasil diperbarui.", tone: "success" });
     } catch (err) {
-      if (profile) {
-        if (profileImage) {
-          localStorage.setItem(getProfilePhotoKey(profile.loginId), profileImage);
-        } else {
-          localStorage.removeItem(getProfilePhotoKey(profile.loginId));
-        }
-        setProfile((current) => (current ? { ...current, profileImage } : current));
-        setPhotoPanelOpen(false);
-        showToast({ title: "Foto profil disimpan di perangkat ini.", tone: "success" });
-      } else {
-        showToast({ title: err instanceof Error ? err.message : "Foto profil belum dapat disimpan.", tone: "info" });
-      }
+      showToast({ title: err instanceof Error ? err.message : "Foto profil belum dapat disimpan ke akun.", tone: "info" });
     } finally {
       setPhotoSaving(false);
     }

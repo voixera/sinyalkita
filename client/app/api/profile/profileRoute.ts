@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
+import { readProfileImage, updateProfileImage } from "@/lib/server/profile-image";
 
 export const dynamic = "force-dynamic";
 
@@ -41,27 +42,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-async function readProfileImage(userId: string) {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { profileImage: true }
-    });
-
-    return user?.profileImage || null;
-  } catch (error) {
-    if (isMissingProfileImageStorage(error)) return null;
-    throw error;
-  }
-}
-
-function isMissingProfileImageStorage(error: unknown) {
-  if (!error || typeof error !== "object") return false;
-  const code = "code" in error && typeof error.code === "string" ? error.code : "";
-  const message = "message" in error && typeof error.message === "string" ? error.message : "";
-  return code === "P2022" || (message.includes("profileImage") && message.includes("column"));
-}
-
 export async function PATCH(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
@@ -73,9 +53,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ message: "Tidak ada data profil yang diubah." }, { status: 400 });
     }
 
-    const profile = await prisma.user.update({
+    const profile = await prisma.user.findUnique({
       where: { id: auth.user.id },
-      data: { profileImage: payload.profileImage || null },
       select: {
         id: true,
         customerId: true,
@@ -85,12 +64,17 @@ export async function PATCH(req: NextRequest) {
         phone: true,
         address: true,
         serverName: true,
-        role: true,
-        profileImage: true
+        role: true
       }
     });
 
-    return NextResponse.json({ profile });
+    if (!profile) {
+      return NextResponse.json({ message: "Profil tidak ditemukan." }, { status: 404 });
+    }
+
+    const profileImage = await updateProfileImage(auth.user.id, payload.profileImage || null);
+
+    return NextResponse.json({ profile: { ...profile, profileImage } });
   } catch (error) {
     return apiError(error);
   }

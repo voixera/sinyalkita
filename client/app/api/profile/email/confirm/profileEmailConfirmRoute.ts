@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/email-verification";
 import { apiError, requireAuth } from "@/lib/server/auth";
 import { prisma } from "@/lib/server/prisma";
+import { readProfileImage } from "@/lib/server/profile-image";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Kode verifikasi belum sesuai atau sudah kedaluwarsa." }, { status: 400 });
     }
 
-    const profile = await prisma.$transaction(async (tx) => {
+    const updatedProfile = await prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
         where: { id: user.id },
         data: { email: newEmail },
@@ -88,8 +89,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return { ...updated, profileImage: null };
+      return updated;
     });
+    const profileImage = await readProfileImage(user.id);
+    const profile = { ...updatedProfile, profileImage };
 
     return NextResponse.json({ message: "Email profil berhasil diperbarui.", profile });
   } catch (error) {
