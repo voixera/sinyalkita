@@ -11,9 +11,11 @@ import type { User } from "@/lib/types";
 export default function ProfileSettingsPage({ admin = false }: { admin?: boolean }) {
   const [profile, setProfile] = useState<User | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [photoPanelOpen, setPhotoPanelOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [emailCode, setEmailCode] = useState("");
   const [emailCodeSentTo, setEmailCodeSentTo] = useState("");
+  const [emailPanelOpen, setEmailPanelOpen] = useState(false);
   const [passwordCode, setPasswordCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordCodeSentTo, setPasswordCodeSentTo] = useState("");
@@ -78,6 +80,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       setProfile(result.profile);
       setProfileImage(result.profile.profileImage);
       localStorage.removeItem(getProfilePhotoKey(result.profile.loginId));
+      setPhotoPanelOpen(false);
       showToast({ title: "Foto profil berhasil diperbarui.", tone: "success" });
     } catch (err) {
       if (profile) {
@@ -87,6 +90,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
           localStorage.removeItem(getProfilePhotoKey(profile.loginId));
         }
         setProfile((current) => (current ? { ...current, profileImage } : current));
+        setPhotoPanelOpen(false);
         showToast({ title: "Foto profil disimpan di perangkat ini.", tone: "success" });
       } else {
         showToast({ title: err instanceof Error ? err.message : "Foto profil belum dapat disimpan.", tone: "info" });
@@ -118,6 +122,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       setNewEmail("");
       setEmailCode("");
       setEmailCodeSentTo("");
+      setEmailPanelOpen(false);
       showToast({ title: result.message, tone: "success" });
     } catch (err) {
       showToast({ title: err instanceof Error ? err.message : "Email belum dapat diperbarui.", tone: "info" });
@@ -169,6 +174,13 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
     setShowNewPassword(false);
   }
 
+  function closeEmailPanel() {
+    setEmailPanelOpen(false);
+    setNewEmail("");
+    setEmailCode("");
+    setEmailCodeSentTo("");
+  }
+
   return (
     <AppShell admin={admin}>
       <div className="mb-4 sm:mb-5">
@@ -181,9 +193,9 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       ) : !profile ? (
         <SkeletonBlock className="h-72 sm:h-96" />
       ) : (
-        <div className="grid gap-3 sm:gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="grid items-start gap-3 sm:gap-4 xl:grid-cols-[0.85fr_1.15fr]">
           <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
-            <div className="grid gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 items-center gap-3 sm:items-start sm:gap-5">
                 <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-mist text-2xl font-bold text-ink shadow-soft sm:h-28 sm:w-28 sm:text-3xl">
                   {profileImage ? (
@@ -198,7 +210,21 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                   <p className="mt-2 truncate text-xs font-semibold text-ink-soft sm:mt-3 sm:text-sm">{profile.email || "Email belum terhubung"}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+
+              {photoPanelOpen ? (
+                <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:w-fit sm:text-sm" onClick={() => setPhotoPanelOpen(false)}>
+                  Tutup
+                </Button>
+              ) : (
+                <Button type="button" className="min-h-10 w-full text-xs sm:w-fit sm:text-sm" onClick={() => setPhotoPanelOpen(true)}>
+                  <Camera className="h-4 w-4" />
+                  Atur foto
+                </Button>
+              )}
+            </div>
+
+            {photoPanelOpen ? (
+              <div className="mt-4 grid grid-cols-3 gap-2 border-t border-line/80 pt-4">
                 <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line/90 bg-white px-3 text-xs font-bold text-ink hover:border-ocean/30 hover:shadow-soft sm:min-h-11 sm:px-4 sm:text-sm">
                   <Camera className="h-4 w-4" />
                   <span className="hidden sm:inline">Pilih foto</span>
@@ -214,73 +240,88 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
                   {photoSaving ? "Simpan..." : "Simpan"}
                 </Button>
               </div>
-            </div>
+            ) : null}
           </section>
 
           <div className="grid gap-3 sm:gap-4">
             <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
-              <div className="mb-4 flex items-start gap-3 sm:mb-5">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-success sm:h-11 sm:w-11">
-                  <MailCheck className="h-5 w-5" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-success sm:h-11 sm:w-11">
+                    <MailCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-heading text-lg font-bold text-ink sm:text-xl">Email terhubung</h2>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">
+                      {profile.email ? "Ubah email dengan kode verifikasi." : "Hubungkan email dengan kode verifikasi."}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-heading text-lg font-bold text-ink sm:text-xl">Email terhubung</h2>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-ink-soft sm:text-sm">
-                    {profile.email ? "Kode dikirim ke email lama sebelum perubahan disimpan." : "Kode dikirim ke email baru untuk menghubungkan akun."}
-                  </p>
-                </div>
+
+                {emailPanelOpen ? (
+                  <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:w-fit sm:text-sm" onClick={closeEmailPanel}>
+                    Tutup
+                  </Button>
+                ) : (
+                  <Button type="button" className="min-h-10 w-full text-xs sm:w-fit sm:text-sm" onClick={() => setEmailPanelOpen(true)}>
+                    <MailCheck className="h-4 w-4" />
+                    {profile.email ? "Ubah email" : "Hubungkan email"}
+                  </Button>
+                )}
               </div>
 
-              <div className="rounded-xl border border-line bg-mist/70 p-3 sm:p-4">
+              <div className="mt-4 rounded-xl border border-line bg-mist/70 p-3 sm:p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-soft">Email saat ini</p>
                 <p className="mt-2 break-all text-sm font-bold text-ink sm:text-base">{profile.email || "Belum ada email"}</p>
               </div>
 
-              <div className="mt-4 grid gap-3 sm:gap-4">
-                <label className="block text-sm font-bold text-ink">
-                  Email baru
-                  <input
-                    type="email"
-                    value={newEmail}
-                    onChange={(event) => {
-                      setNewEmail(event.target.value);
-                      setEmailCodeSentTo("");
-                      setEmailCode("");
-                    }}
-                    className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
-                    placeholder="email-baru@example.com"
-                  />
-                </label>
+              {emailPanelOpen ? (
+                <div className="mt-4 grid gap-3 border-t border-line/80 pt-4 sm:gap-4">
+                  <label className="block text-sm font-bold text-ink">
+                    Email baru
+                    <input
+                      type="email"
+                      value={newEmail}
+                      onChange={(event) => {
+                        setNewEmail(event.target.value);
+                        setEmailCodeSentTo("");
+                        setEmailCode("");
+                      }}
+                      className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
+                      placeholder="email-baru@example.com"
+                    />
+                  </label>
 
-                <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={requestEmailCode} disabled={emailRequesting || !newEmail}>
-                  <MailCheck className="h-4 w-4" />
-                  {emailRequesting ? "Mengirim kode..." : "Kirim kode"}
-                </Button>
+                  <Button type="button" variant="ghost" className="min-h-10 w-full bg-mist text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={requestEmailCode} disabled={emailRequesting || !newEmail}>
+                    <MailCheck className="h-4 w-4" />
+                    {emailRequesting ? "Mengirim kode..." : "Kirim kode"}
+                  </Button>
 
-                {emailCodeSentTo ? (
-                  <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-xs font-semibold text-success sm:text-sm">
-                    Kode dikirim ke {emailCodeSentTo}.
-                  </p>
-                ) : null}
+                  {emailCodeSentTo ? (
+                    <p className="rounded-xl border border-success/15 bg-success-soft px-4 py-3 text-xs font-semibold text-success sm:text-sm">
+                      Kode dikirim ke {emailCodeSentTo}.
+                    </p>
+                  ) : null}
 
-                <label className="block text-sm font-bold text-ink">
-                  Kode verifikasi
-                  <input
-                    type="text"
-                    value={emailCode}
-                    onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
-                    placeholder="000000"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                  />
-                </label>
+                  <label className="block text-sm font-bold text-ink">
+                    Kode verifikasi
+                    <input
+                      type="text"
+                      value={emailCode}
+                      onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className="mt-2 w-full rounded-xl border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink placeholder:text-ink-soft/50 sm:py-3"
+                      placeholder="000000"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                    />
+                  </label>
 
-                <Button type="button" className="min-h-10 w-full text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={confirmEmailChange} disabled={emailConfirming || emailCode.length !== 6 || !newEmail}>
-                  <UserRound className="h-4 w-4" />
-                  {emailConfirming ? "Memverifikasi..." : "Simpan email"}
-                </Button>
-              </div>
+                  <Button type="button" className="min-h-10 w-full text-xs sm:min-h-11 sm:w-fit sm:text-sm" onClick={confirmEmailChange} disabled={emailConfirming || emailCode.length !== 6 || !newEmail}>
+                    <UserRound className="h-4 w-4" />
+                    {emailConfirming ? "Memverifikasi..." : "Simpan email"}
+                  </Button>
+                </div>
+              ) : null}
             </section>
 
             <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
