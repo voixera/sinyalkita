@@ -193,7 +193,7 @@ export default function ProfileSettingsPage({ admin = false }: { admin?: boolean
       ) : !profile ? (
         <SkeletonBlock className="h-72 sm:h-96" />
       ) : (
-        <div className="grid items-start gap-3 sm:gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="grid items-start gap-3 sm:gap-4">
           <section className="rounded-xl border border-line bg-white p-4 shadow-soft sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 items-center gap-3 sm:items-start sm:gap-5">
